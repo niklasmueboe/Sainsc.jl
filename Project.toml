@@ -1,0 +1,24 @@
+name = "StereoSSAM"
+uuid = "4c4340ea-7f9e-46b4-8512-61f1f6c41a11"
+authors = ["Niklas Müller-Bötticher <niklasmueboe@github.com>"]
+version = "0.1.0"
+
+[deps]
+AxisKeys = "94b1ba4f-4ee9-5380-92f1-94cde586c3c5"
+CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
+DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
+ImageFiltering = "6a3955dd-da59-5b1f-98d4-e7296123deb5"
+OrderedCollections = "bac558e1-5e72-5ebc-8fee-abe8a469f55d"
+SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
+Unzip = "41fe7b60-77ed-43a1-b4f0-825fd5a5650d"
+
+[weakdeps]
+Muon = "446846d7-b4ce-489d-bf74-72da18fe3629"
+SingleCellProjections = "03d38035-ed2f-4a36-82eb-797f1727ab2e"
+
+[extensions]
+AnnDataExt = "Muon"
+SingleCellProjectionsExt = "SingleCellProjections"
+
+[compat]
+julia = "1.9"
