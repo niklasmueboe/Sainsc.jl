@@ -5,7 +5,7 @@ using AxisKeys: named_axiskeys
 using Base.Broadcast: @__dot__
 using Base.Threads: @threads
 using OrderedCollections: OrderedDict
-using SparseArrays: dropzeros!
+using SparseArrays
 
 
 function crop!(sp_c, slice)
@@ -14,12 +14,11 @@ function crop!(sp_c, slice)
     end
 end
 
-# TODO slow
-function mask!(sp_c, mask)
+function mask!(sp_c, mask::AbstractMatrix)
     inv_mask = .!mask
     @threads for i in eachindex(sp_c)
-        z = zero(eltype(sp_c[i]))
-        sp_c[i][.!iszero.(sp_c[i]).&inv_mask] .= zero(eltype(sp_c[i]))
+        x, y, _ = findnz(sp_c[i])
+        nonzeros(sp_c[i])[inv_mask[[CartesianIndex(i) for i in zip(x, y)]]] .= zero(eltype(sp_c[i]))
         dropzeros!(sp_c[i])
     end
 end
