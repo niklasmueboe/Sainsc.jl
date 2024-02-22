@@ -1,4 +1,4 @@
-export crop!, mask!, totalRna
+export crop!, mask!, totalrna
 
 
 using AxisKeys: named_axiskeys
@@ -23,7 +23,10 @@ function mask!(sp_c, mask::AbstractMatrix)
     end
 end
 
-totalRna = sum
+function totalrna(counts)
+    x, y, v = (reduce(vcat, i) for i in unzip(findnz(c) for c in counts))
+    sparse(x, y, v, size(first(counts))...)
+end
 
 
 function getkdeforcoordinates(sp_c, coordinates, kernel; genes = nothing)
