@@ -23,9 +23,17 @@ function isinbounds(x, i, b)
 end
 
 function kde(counts::SparseMatrixCSC{T}, kernel::OffsetArray{S}) where {T<:Real,S<:Real}
-    m, n = size(counts)
+    kde_dest = zeros(S, size(counts))
+    kde!(counts, kernel, kde_dest)
+    kde_dest
+end
 
-    kde_acc = zeros(S, (m, n))
+function kde!(
+    counts::SparseMatrixCSC{T},
+    kernel::OffsetArray{S},
+    dest::Matrix{S},
+) where {T<:Real,S<:Real}
+    m, n = size(counts)
 
     rows = rowvals(counts)
     vals = convert.(S, nonzeros(counts))
@@ -41,12 +49,12 @@ function kde(counts::SparseMatrixCSC{T}, kernel::OffsetArray{S}) where {T<:Real,
             for c in col_offsets, r in row_offsets
                 i = row + r
                 j = col + c
-                @inbounds kde_acc[i, j] += val * kernel[r, c]
+                @inbounds dest[i, j] += val * kernel[r, c]
             end
         end
     end
 
-    kde_acc
+    dest
 end
 
 function kde(counts::AbstractArray{T}, kernel) where {T<:Real}
@@ -135,15 +143,18 @@ function calculatecosinesim(
 
     cosine = Array{T}(undef, (n, m, n_celltypes))
     kde_norm = zeros(T, (n, m))
+    kde_gene = Array{T}(undef, (n, m))
+    z = zero(T)
 
     for (g1, g2) in zip(eachindex(counts), axes(signatures, 2))
-        kde_gene = kde(counts[g1], kernel)
+        kde_gene .= z
+        kde!(counts[g1], kernel, kde_gene)
         @. kde_norm += kde_gene^2
         for (i, ct) in enumerate(axes(signatures, 1))
             if ct == 1
-                cosine[:, :, i] .= kde_gene * signatures[ct, g2]
+                @. cosine[:, :, i] = kde_gene * signatures[ct, g2]
             else
-                cosine[:, :, i] .+= kde_gene * signatures[ct, g2]
+                @views @. cosine[:, :, i] += kde_gene * signatures[ct, g2]
             end
         end
     end
@@ -153,7 +164,7 @@ function calculatecosinesim(
 
     cosine .= cosine ./ reshape(celltype_norm, 1, 1, length(celltype_norm))
     cosine, celltype = map((x -> dropdims(x, dims = 3)), findmax(cosine; dims = 3))
-    cosine = cosine ./ kde_norm
+    cosine ./= kde_norm
 
     celltypemap = map((x -> x.I[3]), celltype)
 
