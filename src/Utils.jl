@@ -29,16 +29,34 @@ function totalrna(counts)
 end
 
 function getkdeforcoordinates(counts, coordinates, kernel; genes = nothing)
+    function _kdestack(counts, coordinates, kernel, batch)
+        T = eltype(kernel)
+        v = Vector{SparseVector{T}}(undef, length(batch))
+        kde_gene = Array{T}(undef, size(first(counts)))
+        z = zero(T)
+
+        for (i, gene) in enumerate(batch)
+            kde_gene .= z
+            kde!(counts[gene], kernel, kde_gene)
+            v[i] = sparsevec(kde_gene[coordinates])
+        end
+        v
+    end
+
     if !isnothing(genes)
         counts = counts(genes)
     end
 
-    arr = Matrix{Float64}(undef, (length(coordinates), length(counts)))
-    @threads for (j, i) in collect(enumerate(eachindex(counts)))
-        arr[:, j] .= kde(counts[i], kernel)[coordinates]
+    batchsize = ceil(Int, length(counts) / Threads.nthreads())
+    n_batches = ceil(Int, length(counts) / batchsize)
+    batches = Iterators.partition(eachindex(counts), batchsize)
+
+    vec = Vector{Vector{SparseVector}}(undef, n_batches)
+    @threads for (i, batch) in collect(enumerate(batches))
+        vec[i] = _kdestack(counts, coordinates, kernel, batch)
     end
 
-    arr
+    sparse_hcat(Iterators.flatten(vec)...)
 end
 
 function categoricalcoordinates(x, y)
