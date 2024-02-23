@@ -5,7 +5,8 @@ using Base.Broadcast: @__dot__
 using Base.Threads: @threads
 using BlockArrays: Block, BlockArray, undef_blocks
 using CategoricalArrays
-using ImageFiltering: Kernel, imfilter, mapwindow, Fill, Algorithm
+using ImageFiltering:
+    Kernel, imfilter, mapwindow, Fill, Algorithm, findlocalmaxima as findlocalmax
 using LinearAlgebra: norm
 using OffsetArrays: OffsetArray
 using SparseArrays: SparseMatrixCSC
@@ -63,33 +64,9 @@ end
 
 
 # Local maxima detection
-function islocalmax(arr::Matrix, x::Integer, y::Integer, s::Integer, n::Integer, m::Integer)
-    is = filter(i -> isinbounds(x, i, n), -s:s)
-    js = filter(i -> isinbounds(y, i, m), -s:s)
-
-    for j in js, i in is
-        xi = x + i
-        yj = y + j
-        if @inbounds arr[x, y] < arr[xi, yj]
-            return false
-        end
-    end
-    return true
-end
-
 function findlocalmaxima(counts, d::Integer, kernel)
     total_rna = kde(totalrna(counts), kernel)
-
-    n, m = size(total_rna)
-    max_coordinates = CartesianIndex{2}[]
-
-    for y = 1:m, x = 1:n
-        if !iszero(total_rna[x, y]) && islocalmax(total_rna, x, y, d, n, m)
-            push!(max_coordinates, CartesianIndex(x, y))
-        end
-    end
-
-    max_coordinates
+    findlocalmax(total_rna, window = (2d + 1, 2d + 1))
 end
 
 
