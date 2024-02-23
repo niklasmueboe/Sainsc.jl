@@ -136,12 +136,14 @@ function calculatecosinesim(
         end
     end
 
-    @. kde_norm = sqrt(kde_norm)
     celltype_norm = map(norm, eachslice(signatures, dims = 1))
-
-    cosine .= cosine ./ reshape(celltype_norm, 1, 1, length(celltype_norm))
+    celltype_norm = reshape(celltype_norm, 1, 1, length(celltype_norm))
+    @. cosine = cosine / celltype_norm
     cosine, celltype = map((x -> dropdims(x, dims = 3)), findmax(cosine; dims = 3))
-    cosine ./= kde_norm
+
+    @. kde_norm = sqrt(kde_norm)
+    @. cosine /= kde_norm
+    @. cosine[iszero(kde_norm)] = 0
 
     celltypemap = map((x -> x.I[3]), celltype)
 
@@ -188,7 +190,7 @@ function assigncelltype(
     cosine = collect(cosine)
     celltypemap = collect(celltypemap)
     celltypemap = compress(CategoricalArray{Union{Missing,T}}(celltypemap))
-    @. celltypemap[isnan(cosine)] = missing
+    @. celltypemap[iszero(cosine)] = missing
 
     if !isnothing(celltypes)
         celltypemap = recode(celltypemap, Dict(enumerate(celltypes))...)
