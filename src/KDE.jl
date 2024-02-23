@@ -2,6 +2,8 @@ export gaussiankernel, findlocalmaxima, kde, assigncelltype
 
 using AxisKeys
 using Base.Broadcast: @__dot__
+using Base.Threads: @threads
+using BlockArrays: Block, BlockArray, undef_blocks
 using CategoricalArrays
 using ImageFiltering: Kernel, imfilter, mapwindow, Fill, Algorithm
 using LinearAlgebra: norm
@@ -84,13 +86,43 @@ end
 
 
 # Celltype assignment
-function generatecelltypemap(celltype::AbstractArray{CartesianIndex{3}}, cosine)
-    celltypemap = map((x -> x.I[3]), celltype)
-    celltypemap =
-        compress(CategoricalArray{Union{Missing,eltype(celltypemap)}}(celltypemap))
-    @. celltypemap[isnan(cosine)] = missing
+function chunk(counts, kernel::OffsetArray, sx = 500, sy = 500)
+    m, n = size(first(counts))
+    x1, x2 = extrema(axes(kernel, 1))
+    y1, y2 = extrema(axes(kernel, 2))
 
-    celltypemap
+    chunks = Dict{Block{2,Int},Any}()
+
+    cols = Int[]
+    rows = Int[]
+    padcols = Tuple{Int,Int}[]
+    padrows = Tuple{Int,Int}[]
+
+    for j = 1:ceil(Int, n / sx)
+        left = (j - 1) * sx + 1
+        right = j * sx
+        l = max(1, left + x1)
+        r = min(n, right + x2)
+
+        col_chunk = map(x -> x[:, l:r], counts)
+        push!(cols, min(n, right) - max(1, left) + 1)
+        push!(padcols, (max(0, left - l), min(0, right - r)))
+
+        for i = 1:ceil(Int, m / sy)
+            bottom = (i - 1) * sy + 1
+            top = i * sy
+            b = max(1, bottom + y1)
+            t = min(m, top + y2)
+
+            chunks[Block(i, j)] = map(x -> x[b:t, :], col_chunk)
+            if j == 1
+                push!(rows, min(m, top) - max(1, bottom) + 1)
+                push!(padrows, (max(0, bottom - b), min(0, top - t)))
+            end
+        end
+    end
+
+    chunks, rows, cols, padrows, padcols
 end
 
 function calculatecosinesim(
@@ -123,7 +155,7 @@ function calculatecosinesim(
     cosine, celltype = map((x -> dropdims(x, dims = 3)), findmax(cosine; dims = 3))
     cosine = cosine ./ kde_norm
 
-    celltypemap = generatecelltypemap(celltype, cosine)
+    celltypemap = map((x -> x.I[3]), celltype)
 
     celltypemap, cosine
 end
@@ -143,11 +175,32 @@ function assigncelltype(
         @warn "Not all genes in 'signatures' exist in 'counts'. Missing genes will be skipped."
     end
 
-    celltypemap, cosine = calculatecosinesim(
-        counts(names(signatures)[genes_exist]),
-        Matrix{Float32}(signatures[:, genes_exist]),
-        convert.(Float32, kernel),
-    )
+    counts = counts(names(signatures)[genes_exist])
+    signatures = Matrix{Float32}(signatures[:, genes_exist])
+    convert.(Float32, kernel)
+
+    chunked_counts, rows, cols, padrows, padcols = chunk(counts, kernel)
+
+    T = Int
+
+    cosine = BlockArray(undef_blocks, Matrix{eltype(kernel)}, rows, cols)
+    celltypemap = BlockArray(undef_blocks, Matrix{T}, rows, cols)
+
+    @threads for (i, (r1, r2)) in collect(enumerate(padrows))
+        @threads for (j, (c1, c2)) in collect(enumerate(padcols))
+            idx = Block(i, j)
+            celltypemap_chunk, cosine_chunk =
+                calculatecosinesim(pop!(chunked_counts, idx), signatures, kernel)
+
+            celltypemap[idx] = celltypemap_chunk[1+r1:end+r2, 1+c1:end+c2]
+            cosine[idx] = cosine_chunk[1+r1:end+r2, 1+c1:end+c2]
+        end
+    end
+
+    cosine = collect(cosine)
+    celltypemap = collect(celltypemap)
+    celltypemap = compress(CategoricalArray{Union{Missing,T}}(celltypemap))
+    @. celltypemap[isnan(cosine)] = missing
 
     if !isnothing(celltypes)
         celltypemap = recode(celltypemap, Dict(enumerate(celltypes))...)
