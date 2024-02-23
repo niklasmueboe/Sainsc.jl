@@ -25,9 +25,8 @@ end
 
 function totalrna(counts)
     x, y, v = (reduce(vcat, i) for i in unzip(findnz(c) for c in counts))
-    sparse(x, y, v, size(first(counts))...)
+    sparse(x, y, v, size(first(counts))...) |> collect
 end
-
 
 function getkdeforcoordinates(sp_c, coordinates, kernel; genes = nothing)
     if !isnothing(genes)
@@ -36,7 +35,7 @@ function getkdeforcoordinates(sp_c, coordinates, kernel; genes = nothing)
 
     arr = Matrix{Float64}(undef, (length(coordinates), length(sp_c)))
     @threads for (j, i) in collect(enumerate(eachindex(sp_c)))
-        arr[:, j] = kde(sp_c[i], kernel)[coordinates]
+        arr[:, j] .= kde(sp_c[i], kernel)[coordinates]
     end
 
     arr
@@ -62,7 +61,7 @@ end
 stringcoordinates(x, y) = @. string(x) * "_" * string(y)
 stringcoordinates(x...) = [join((string(j) for j in i), "_") for i in zip(x...)]
 
-function _getlocalmaxima(sp_c, localmax, kernel; genes = nothing)
+function _getlocalmaxima(sp_c::KeyedArray, localmax, kernel; genes = nothing)
     arr = getkdeforcoordinates(sp_c, localmax, kernel; genes = genes)
     if isnothing(genes)
         genes = named_axiskeys(sp_c)[1]

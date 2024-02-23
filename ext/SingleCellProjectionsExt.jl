@@ -5,7 +5,7 @@ export getlocalmaxima, readstereoseqbinned
 
 
 using Base.Broadcast: @__dot__
-using DataFrames: DataFrame
+using DataFrames
 using SingleCellProjections: DataMatrix
 using SparseArrays: sparse
 
@@ -44,7 +44,7 @@ function StereoSSAM.readstereoseqbinned(file, s::Integer)
     DataMatrix(
         counts,
         DataFrame(gene = df.geneID.pool),
-        DataFrame(coord = x_y, x = x, y = y),
+        DataFrame(bin_id = x_y, x = x, y = y),
     )
 end
 
