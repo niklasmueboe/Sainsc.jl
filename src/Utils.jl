@@ -8,18 +8,18 @@ using OrderedCollections: OrderedDict
 using SparseArrays
 
 
-function crop!(sp_c, slice)
-    @threads for i in eachindex(sp_c)
-        sp_c[i] = sp_c[i][slice...]
+function crop!(counts, slice)
+    @threads for i in eachindex(counts)
+        counts[i] = counts[i][slice...]
     end
 end
 
-function mask!(sp_c, mask::AbstractMatrix)
+function mask!(counts, mask::AbstractMatrix)
     inv_mask = .!mask
-    @threads for i in eachindex(sp_c)
-        x, y, _ = findnz(sp_c[i])
-        nonzeros(sp_c[i])[inv_mask[[CartesianIndex(i) for i in zip(x, y)]]] .= zero(eltype(sp_c[i]))
-        dropzeros!(sp_c[i])
+    @threads for i in eachindex(counts)
+        x, y, _ = findnz(counts[i])
+        nonzeros(counts[i])[inv_mask[[CartesianIndex(i) for i in zip(x, y)]]] .= zero(eltype(counts[i]))
+        dropzeros!(counts[i])
     end
 end
 
@@ -28,14 +28,14 @@ function totalrna(counts)
     sparse(x, y, v, size(first(counts))...) |> collect
 end
 
-function getkdeforcoordinates(sp_c, coordinates, kernel; genes = nothing)
+function getkdeforcoordinates(counts, coordinates, kernel; genes = nothing)
     if !isnothing(genes)
-        sp_c = sp_c(genes)
+        counts = counts(genes)
     end
 
-    arr = Matrix{Float64}(undef, (length(coordinates), length(sp_c)))
-    @threads for (j, i) in collect(enumerate(eachindex(sp_c)))
-        arr[:, j] .= kde(sp_c[i], kernel)[coordinates]
+    arr = Matrix{Float64}(undef, (length(coordinates), length(counts)))
+    @threads for (j, i) in collect(enumerate(eachindex(counts)))
+        arr[:, j] .= kde(counts[i], kernel)[coordinates]
     end
 
     arr
@@ -61,10 +61,10 @@ end
 stringcoordinates(x, y) = @. string(x) * "_" * string(y)
 stringcoordinates(x...) = [join((string(j) for j in i), "_") for i in zip(x...)]
 
-function _getlocalmaxima(sp_c::KeyedArray, localmax, kernel; genes = nothing)
-    arr = getkdeforcoordinates(sp_c, localmax, kernel; genes = genes)
+function _getlocalmaxima(counts::KeyedArray, localmax, kernel; genes = nothing)
+    arr = getkdeforcoordinates(counts, localmax, kernel; genes = genes)
     if isnothing(genes)
-        genes = named_axiskeys(sp_c)[1]
+        genes = named_axiskeys(counts)[1]
     end
 
     coordinates = unzip(map((c -> c.I), localmax))

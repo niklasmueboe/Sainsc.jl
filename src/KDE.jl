@@ -67,8 +67,8 @@ function islocalmax(arr::Matrix, x::Integer, y::Integer, s::Integer, n::Integer,
     return true
 end
 
-function findlocalmaxima(sp_c, d::Integer, kernel)
-    total_rna = kde(totalrna(sp_c), kernel)
+function findlocalmaxima(counts, d::Integer, kernel)
+    total_rna = kde(totalrna(counts), kernel)
 
     n, m = size(total_rna)
     max_coordinates = CartesianIndex{2}[]
@@ -99,9 +99,10 @@ function calculatecosinesim(
     kernel::AbstractMatrix{T},
 ) where {T<:Real}
     n_celltypes, n_genes = size(signatures)[1:2]
+    n, m = size(first(counts))
 
-    cosine = Array{T}(undef, (size(first(counts))..., n_celltypes))
-    kde_norm = zeros(T, size(first(counts)))
+    cosine = Array{T}(undef, (n, m, n_celltypes))
+    kde_norm = zeros(T, (n, m))
 
     for (g1, g2) in zip(eachindex(counts), axes(signatures, 2))
         kde_gene = kde(counts[g1], kernel)

@@ -10,13 +10,13 @@ using StereoSSAM
 
 function StereoSSAM.getlocalmaxima(
     T::Type{AnnData},
-    sp_c,
+    counts,
     localmax,
     kernel;
     genes = nothing,
 )
     X, genes, obs_names, coordinates =
-        StereoSSAM._getlocalmaxima(sp_c, localmax, kernel; genes = genes)
+        StereoSSAM._getlocalmaxima(counts, localmax, kernel; genes = genes)
 
     AnnData(
         X = X,

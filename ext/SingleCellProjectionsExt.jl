@@ -14,13 +14,13 @@ using StereoSSAM
 
 function StereoSSAM.getlocalmaxima(
     T::Type{DataMatrix},
-    sp_c,
+    counts,
     localmax,
     kernel;
     genes = nothing,
 )
     mat, genes, x_y, (x, y) =
-        StereoSSAM._getlocalmaxima(sp_c, localmax, kernel; genes = genes)
+        StereoSSAM._getlocalmaxima(counts, localmax, kernel; genes = genes)
     DataMatrix(
         transpose(mat),
         DataFrame(gene = genes),
@@ -29,7 +29,6 @@ function StereoSSAM.getlocalmaxima(
 end
 
 function StereoSSAM.readstereoseqbinned(file, s::Integer)
-
     df = StereoSSAM.loadstereoseqfile(file)
 
     transform!(df, @. [:x, :y] => (x -> div(x - 1, s) + 1) => [:x, :y])
