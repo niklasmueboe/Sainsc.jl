@@ -2,6 +2,7 @@ export readstereoseq
 
 
 using AxisKeys: wrapdims
+using Base.Broadcast: @__dot__
 using CSV: read as readcsv
 using DataFrames
 using SparseArrays: sparse

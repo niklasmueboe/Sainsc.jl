@@ -4,10 +4,8 @@ module SingleCellProjectionsExt
 export getlocalmaxima, readstereoseqbinned
 
 
-using Base.Broadcast: @__dot__
 using DataFrames
 using SingleCellProjections: DataMatrix
-using SparseArrays: sparse
 
 using StereoSSAM
 
