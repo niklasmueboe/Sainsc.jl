@@ -33,10 +33,8 @@ function getkdeforcoordinates(counts, coordinates, kernel; genes = nothing)
         T = eltype(kernel)
         v = Vector{SparseVector{T}}(undef, length(batch))
         kde_gene = Array{T}(undef, size(first(counts)))
-        z = zero(T)
 
         for (i, gene) in enumerate(batch)
-            kde_gene .= z
             kde!(counts[gene], kernel, kde_gene)
             v[i] = sparsevec(kde_gene[coordinates])
         end
