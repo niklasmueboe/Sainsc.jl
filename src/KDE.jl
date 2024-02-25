@@ -11,28 +11,25 @@ using LinearAlgebra: norm
 using OffsetArrays: OffsetArray
 using SparseArrays: SparseMatrixCSC
 
-
 # KDE
 function gaussiankernel(σ::Real, r::Real)
     l = ceil(Int, 2r * σ + 1)
-    Kernel.gaussian((σ, σ), (l, l))
+    return Kernel.gaussian((σ, σ), (l, l))
 end
 
 function isinbounds(x, i, b)
     x += i
-    x >= 1 && x <= b
+    return x >= 1 && x <= b
 end
 
 function kde(counts::SparseMatrixCSC{T}, kernel::OffsetArray{S}) where {T<:Real,S<:Real}
     kde_dest = Array{S}(undef, size(counts))
     kde!(counts, kernel, kde_dest)
-    kde_dest
+    return kde_dest
 end
 
 function kde!(
-    counts::SparseMatrixCSC{T},
-    kernel::OffsetArray{S},
-    dest::Matrix{S},
+    counts::SparseMatrixCSC{T}, kernel::OffsetArray{S}, dest::Matrix{S}
 ) where {T<:Real,S<:Real}
     m, n = size(counts)
 
@@ -40,7 +37,7 @@ function kde!(
     vals = convert.(S, nonzeros(counts))
 
     dest .= zero(S)
-    for col = 1:n
+    for col in 1:n
         for idx in nzrange(counts, col)
             row = rows[idx]
             val = vals[idx]
@@ -56,23 +53,21 @@ function kde!(
         end
     end
 
-    dest
+    return dest
 end
 
 function kde(counts::AbstractArray{T}, kernel) where {T<:Real}
-    imfilter(counts, kernel, Fill(zero(T)), Algorithm.FIR())
+    return imfilter(counts, kernel, Fill(zero(T)), Algorithm.FIR())
 end
-
 
 # Local maxima detection
 function findlocalmaxima(counts, d::Integer, kernel)
     total_rna = kde(totalrna(counts), kernel)
-    findlocalmax(total_rna, window = (2d + 1, 2d + 1))
+    return findlocalmax(total_rna; window=(2d + 1, 2d + 1))
 end
 
-
 # Celltype assignment
-function chunk(counts, kernel::OffsetArray, sx = 500, sy = 500)
+function chunk(counts, kernel::OffsetArray, sx=500, sy=500)
     m, n = size(first(counts))
     x1, x2 = extrema(axes(kernel, 1))
     y1, y2 = extrema(axes(kernel, 2))
@@ -84,7 +79,7 @@ function chunk(counts, kernel::OffsetArray, sx = 500, sy = 500)
     padcols = Tuple{Int,Int}[]
     padrows = Tuple{Int,Int}[]
 
-    for j = 1:ceil(Int, n / sx)
+    for j in 1:ceil(Int, n / sx)
         left = (j - 1) * sx + 1
         right = j * sx
         l = max(1, left + x1)
@@ -94,7 +89,7 @@ function chunk(counts, kernel::OffsetArray, sx = 500, sy = 500)
         push!(cols, min(n, right) - max(1, left) + 1)
         push!(padcols, (max(0, left - l), min(0, right - r)))
 
-        for i = 1:ceil(Int, m / sy)
+        for i in 1:ceil(Int, m / sy)
             bottom = (i - 1) * sy + 1
             top = i * sy
             b = max(1, bottom + y1)
@@ -108,13 +103,11 @@ function chunk(counts, kernel::OffsetArray, sx = 500, sy = 500)
         end
     end
 
-    chunks, rows, cols, padrows, padcols
+    return chunks, rows, cols, padrows, padcols
 end
 
 function calculatecosinesim(
-    counts::KeyedArray,
-    signatures::AbstractMatrix{T},
-    kernel::AbstractMatrix{T},
+    counts::KeyedArray, signatures::AbstractMatrix{T}, kernel::AbstractMatrix{T}
 ) where {T<:Real}
     n_celltypes, n_genes = size(signatures)[1:2]
     n, m = size(first(counts))
@@ -135,10 +128,10 @@ function calculatecosinesim(
         end
     end
 
-    celltype_norm = map(norm, eachslice(signatures, dims = 1))
+    celltype_norm = map(norm, eachslice(signatures; dims=1))
     celltype_norm = reshape(celltype_norm, 1, 1, length(celltype_norm))
     @. cosine = cosine / celltype_norm
-    cosine, celltype = map((x -> dropdims(x, dims = 3)), findmax(cosine; dims = 3))
+    cosine, celltype = map((x -> dropdims(x; dims=3)), findmax(cosine; dims=3))
 
     @. kde_norm = sqrt(kde_norm)
     @. cosine /= kde_norm
@@ -146,14 +139,11 @@ function calculatecosinesim(
 
     celltypemap = map((x -> x.I[3]), celltype)
 
-    celltypemap, cosine
+    return celltypemap, cosine
 end
 
 function assigncelltype(
-    counts::KeyedArray,
-    signatures::AbstractDataFrame,
-    kernel;
-    celltypes = nothing,
+    counts::KeyedArray, signatures::AbstractDataFrame, kernel; celltypes=nothing
 )
     if !isnothing(celltypes) && length(celltypes) != nrow(signatures)
         error("Length of 'celltypes' must match number of rows in 'signatures'")
@@ -178,11 +168,12 @@ function assigncelltype(
     @threads for (i, (r1, r2)) in collect(enumerate(padrows))
         @threads for (j, (c1, c2)) in collect(enumerate(padcols))
             idx = Block(i, j)
-            celltypemap_chunk, cosine_chunk =
-                calculatecosinesim(pop!(chunked_counts, idx), signatures, kernel)
+            celltypemap_chunk, cosine_chunk = calculatecosinesim(
+                pop!(chunked_counts, idx), signatures, kernel
+            )
 
-            celltypemap[idx] = celltypemap_chunk[1+r1:end+r2, 1+c1:end+c2]
-            cosine[idx] = cosine_chunk[1+r1:end+r2, 1+c1:end+c2]
+            celltypemap[idx] = celltypemap_chunk[(1 + r1):(end + r2), (1 + c1):(end + c2)]
+            cosine[idx] = cosine_chunk[(1 + r1):(end + r2), (1 + c1):(end + c2)]
         end
     end
 
@@ -195,5 +186,5 @@ function assigncelltype(
         celltypemap = recode(celltypemap, Dict(enumerate(celltypes))...)
     end
 
-    celltypemap, cosine
+    return celltypemap, cosine
 end

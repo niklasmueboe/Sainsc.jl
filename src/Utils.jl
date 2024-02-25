@@ -1,12 +1,10 @@
 export crop!, mask!, totalrna
 
-
 using AxisKeys: named_axiskeys
 using Base.Broadcast: @__dot__
 using Base.Threads: @threads
 using OrderedCollections: OrderedDict
 using SparseArrays
-
 
 function crop!(counts, slice)
     @threads for i in eachindex(counts)
@@ -25,10 +23,10 @@ end
 
 function totalrna(counts)
     x, y, v = (reduce(vcat, i) for i in unzip(findnz(c) for c in counts))
-    sparse(x, y, v, size(first(counts))...) |> collect
+    return collect(sparse(x, y, v, size(first(counts))...))
 end
 
-function getkdeforcoordinates(counts, coordinates, kernel; genes = nothing)
+function getkdeforcoordinates(counts, coordinates, kernel; genes=nothing)
     function _kdestack(counts, coordinates, kernel, batch)
         T = eltype(kernel)
         v = Vector{SparseVector{T}}(undef, length(batch))
@@ -38,7 +36,7 @@ function getkdeforcoordinates(counts, coordinates, kernel; genes = nothing)
             kde!(counts[gene], kernel, kde_gene)
             v[i] = sparsevec(kde_gene[coordinates])
         end
-        v
+        return v
     end
 
     if !isnothing(genes)
@@ -54,7 +52,7 @@ function getkdeforcoordinates(counts, coordinates, kernel; genes = nothing)
         vec[i] = _kdestack(counts, coordinates, kernel, batch)
     end
 
-    sparse_hcat(Iterators.flatten(vec)...)
+    return sparse_hcat(Iterators.flatten(vec)...)
 end
 
 function categoricalcoordinates(x, y)
@@ -71,14 +69,14 @@ function categoricalcoordinates(x, y)
     cat_coordinate = [coordinates[xy] for xy in zip(x, y)]
     coordinate = unzip(keys(coordinates))
 
-    cat_coordinate, coordinate
+    return cat_coordinate, coordinate
 end
 
 stringcoordinates(x, y) = @. string(x) * "_" * string(y)
 stringcoordinates(x...) = [join((string(j) for j in i), "_") for i in zip(x...)]
 
-function _getlocalmaxima(counts::KeyedArray, localmax, kernel; genes = nothing)
-    arr = getkdeforcoordinates(counts, localmax, kernel; genes = genes)
+function _getlocalmaxima(counts::KeyedArray, localmax, kernel; genes=nothing)
+    arr = getkdeforcoordinates(counts, localmax, kernel; genes=genes)
     if isnothing(genes)
         genes = named_axiskeys(counts)[1]
     end
@@ -86,5 +84,5 @@ function _getlocalmaxima(counts::KeyedArray, localmax, kernel; genes = nothing)
     coordinates = unzip(map((c -> c.I), localmax))
     coordinatestring = stringcoordinates(coordinates...)
 
-    arr, genes, coordinatestring, coordinates
+    return arr, genes, coordinatestring, coordinates
 end
