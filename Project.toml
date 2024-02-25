@@ -28,3 +28,4 @@ SingleCellProjectionsExt = "SingleCellProjections"
 
 [compat]
 julia = "1.9"
+ImageFiltering = "0.7"
