@@ -1,9 +1,6 @@
 module AutomaticSingleCellToolboxExt
 
 
-export getlocalmaximaanndata
-
-
 using AutomaticSingleCellToolbox: WsObj
 using DataFrames: DataFrame
 using SparseArrays: nzrange

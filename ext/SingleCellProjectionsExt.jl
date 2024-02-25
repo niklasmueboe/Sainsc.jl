@@ -1,9 +1,6 @@
 module SingleCellProjectionsExt
 
 
-export getlocalmaxima, readstereoseqbinned
-
-
 using DataFrames
 using SingleCellProjections: DataMatrix
 

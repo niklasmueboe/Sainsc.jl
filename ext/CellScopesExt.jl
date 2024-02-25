@@ -1,9 +1,6 @@
 module CellScopesExt
 
 
-export getlocalmaxima, readstereoseqbinned
-
-
 using DataFrames
 using CellScopes: RawCountObject
 

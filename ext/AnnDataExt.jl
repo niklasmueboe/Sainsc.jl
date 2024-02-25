@@ -1,9 +1,6 @@
 module AnnDataExt
 
 
-export getlocalmaximaanndata
-
-
 using Muon: AnnData
 
 using StereoSSAM
