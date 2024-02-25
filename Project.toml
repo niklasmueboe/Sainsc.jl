@@ -17,12 +17,14 @@ SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 Unzip = "41fe7b60-77ed-43a1-b4f0-825fd5a5650d"
 
 [weakdeps]
+AutomaticSingleCellToolbox = "e6202555-39b2-4a04-a024-3007b9347e88"
 CellScopes = "708d50d9-0a30-4b01-8594-5d83c0e43023"
 Muon = "446846d7-b4ce-489d-bf74-72da18fe3629"
 SingleCellProjections = "03d38035-ed2f-4a36-82eb-797f1727ab2e"
 
 [extensions]
 AnnDataExt = "Muon"
+AutomaticSingleCellToolboxExt = "AutomaticSingleCellToolbox"
 CellScopesExt = "CellScopes"
 SingleCellProjectionsExt = "SingleCellProjections"
 
