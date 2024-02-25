@@ -20,13 +20,13 @@ function StereoSSAM.getlocalmaxima(
     mat, genes, x_y, (x, y) =
         StereoSSAM._getlocalmaxima(counts, localmax, kernel; genes = genes)
     DataMatrix(
-        transpose(mat),
+        permutedims(mat),
         DataFrame(gene = genes),
         DataFrame(coord = x_y, x = x, y = y),
     )
 end
 
-function StereoSSAM.readstereoseqbinned(file, s::Integer)
+function StereoSSAM.readstereoseqbinned(T::Type{DataMatrix}, file, s::Integer)
     counts, genes, x_y, (x, y) = StereoSSAM._readstereoseqbinned(file, s)
 
     DataMatrix(counts, DataFrame(gene = genes), DataFrame(bin_id = x_y, x = x, y = y))

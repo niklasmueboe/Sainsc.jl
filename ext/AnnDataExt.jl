@@ -26,4 +26,15 @@ function StereoSSAM.getlocalmaxima(
     )
 end
 
+function StereoSSAM.readstereoseqbinned(T::Type{AnnData}, file, s::Integer)
+    X, genes, obs_names, coordinates = StereoSSAM._readstereoseqbinned(file, s)
+
+    AnnData(
+        X = permutedims(X),
+        var_names = genes,
+        obs_names = obs_names,
+        obsm = Dict("spatial" => hcat(coordinates...)),
+    )
+end
+
 end # module AnnDataExt
