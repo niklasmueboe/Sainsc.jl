@@ -28,6 +28,11 @@ function loadstereoseqfile(file)
     return df
 end
 
+"""
+    readstereoseq(file)
+
+Read StereoSeq `file` as vector of SparseMatrixCSC.
+"""
 function readstereoseq(file)
     df = loadstereoseqfile(file)
 

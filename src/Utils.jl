@@ -6,13 +6,23 @@ using Base.Threads: @threads
 using OrderedCollections: OrderedDict
 using SparseArrays
 
+"""
+    crop!(counts, slice)
+
+Crop the counts to `slice`.
+"""
 function crop!(counts, slice)
     @threads for i in eachindex(counts)
         counts[i] = counts[i][slice...]
     end
 end
 
-function mask!(counts, mask::AbstractMatrix)
+"""
+    mask!(counts, mask::AbstractMatrix{Bool})
+
+Remove all counts for which `mask` is `false`.
+"""
+function mask!(counts, mask::AbstractMatrix{Bool})
     inv_mask = .!mask
     @threads for i in eachindex(counts)
         x, y, _ = findnz(counts[i])
@@ -21,6 +31,11 @@ function mask!(counts, mask::AbstractMatrix)
     end
 end
 
+"""
+    totalrna(counts)
+
+Caclulate the totalrna as sum of all genes for each pixel.
+"""
 function totalrna(counts)
     x, y, v = (reduce(vcat, i) for i in unzip(findnz(c) for c in counts))
     return collect(sparse(x, y, v, size(first(counts))...))

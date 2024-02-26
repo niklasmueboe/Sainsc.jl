@@ -12,6 +12,11 @@ using OffsetArrays: OffsetArray
 using SparseArrays: SparseMatrixCSC
 
 # KDE
+"""
+    gaussiankernel(σ::Real, r::Real)
+
+Generate a gaussian kernel with bandwidth `σ` and radius `r*σ`
+"""
 function gaussiankernel(σ::Real, r::Real)
     l = ceil(Int, 2r * σ + 1)
     return Kernel.gaussian((σ, σ), (l, l))
@@ -20,6 +25,15 @@ end
 function isinbounds(x, i, b)
     x += i
     return x >= 1 && x <= b
+end
+
+"""
+    kde(counts::AbstractArray{T}, kernel) where {T<:Real}
+
+Calculate kernel density estimate.
+"""
+function kde(counts::AbstractArray{T}, kernel) where {T<:Real}
+    return imfilter(counts, kernel, Fill(zero(T)), Algorithm.FIR())
 end
 
 function kde(counts::SparseMatrixCSC{T}, kernel::OffsetArray{S}) where {T<:Real,S<:Real}
@@ -56,11 +70,14 @@ function kde!(
     return dest
 end
 
-function kde(counts::AbstractArray{T}, kernel) where {T<:Real}
-    return imfilter(counts, kernel, Fill(zero(T)), Algorithm.FIR())
-end
-
 # Local maxima detection
+"""
+    findlocalmaxima(counts, d::Integer, kernel)
+
+Find local maxima of the totalRNA KDE.
+
+Computes the [`kde`](@ref) of the [`totalrna`](@ref) to identify local maximas.
+"""
 function findlocalmaxima(counts, d::Integer, kernel)
     total_rna = kde(totalrna(counts), kernel)
     return findlocalmax(total_rna; window=(2d + 1, 2d + 1))
@@ -142,6 +159,20 @@ function calculatecosinesim(
     return celltypemap, cosine
 end
 
+"""
+    assigncelltype(
+        counts::KeyedArray, signatures::AbstractDataFrame, kernel; celltypes=nothing
+    )
+
+Assign a celltype to each pixel.
+
+The cosine similarity is calculated using `signatures` to assign the celltype with the 
+highest similarity to each pixel.
+
+# Arguments
+- `signatures::AbstractDataFrame`: celltype signatures (celltypes x genes).
+- `celltypes::Vector{AbstractString}=nothing`: celltype names.
+"""
 function assigncelltype(
     counts::KeyedArray, signatures::AbstractDataFrame, kernel; celltypes=nothing
 )
