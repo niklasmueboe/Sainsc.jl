@@ -1,4 +1,4 @@
-export readstereoseq
+export readstereoseq, readstereoseqbinned
 
 using AxisKeys: wrapdims
 using Base.Broadcast: @__dot__
@@ -50,7 +50,12 @@ function readstereoseq(file)
     return wrapdims(counts, genes)
 end
 
-function _readstereoseqbinned(file, s::Integer)
+"""
+    readstereoseqbinned(file, s::Integer)
+
+Read StereoSeq `file` and aggregate locations with bin size `s`.
+"""
+function readstereoseqbinned(file, s::Integer)
     df = loadstereoseqfile(file)
 
     transform!(df, @. [:x, :y] => (x -> div(x - 1, s) + 1) => [:x, :y])
@@ -60,7 +65,9 @@ function _readstereoseqbinned(file, s::Integer)
 
     counts = sparse(df.geneID.refs, cat_coord, df.count)
 
-    x_y = stringcoordinates(x, y)
-
-    return counts, df.geneID.pool, x_y, (x, y)
+    return (
+        counts,
+        DataFrame(; gene=df.geneID.pool),
+        DataFrame(; bin_id=stringcoordinates(x, y), x=x, y=y),
+    )
 end

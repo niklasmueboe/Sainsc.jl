@@ -1,8 +1,9 @@
-export crop!, mask!, totalrna
+export crop!, getlocalmaxima, mask!, totalrna
 
 using AxisKeys: named_axiskeys
 using Base.Broadcast: @__dot__
 using Base.Threads: @threads
+using DataFrames: DataFrame
 using OrderedCollections: OrderedDict
 using SparseArrays
 
@@ -91,14 +92,25 @@ end
 stringcoordinates(x, y) = @. string(x) * "_" * string(y)
 stringcoordinates(x...) = [join((string(j) for j in i), "_") for i in zip(x...)]
 
-function _getlocalmaxima(counts::KeyedArray, localmax, kernel; genes=nothing)
-    arr = getkdeforcoordinates(counts, localmax, kernel; genes=genes)
+"""
+    getlocalmaxima(counts, localmax, kernel; genes=nothing)
+
+Load KDE with `kernel` for coordinates at `localmax`.
+
+# Arguments
+- `genes::Vector{AbstractString}=nothing`: vector of genes for which to calculate KDE.
+"""
+function getlocalmaxima(counts, localmax, kernel; genes=nothing)
+    mat = getkdeforcoordinates(counts, localmax, kernel; genes=genes)
     if isnothing(genes)
         genes = named_axiskeys(counts)[1]
     end
 
-    coordinates = unzip(map((c -> c.I), localmax))
-    coordinatestring = stringcoordinates(coordinates...)
+    x, y = unzip(map((c -> c.I), localmax))
 
-    return arr, genes, coordinatestring, coordinates
+    return (
+        permutedims(mat),
+        DataFrame(; gene=genes),
+        DataFrame(; id=stringcoordinates(x, y), x=x, y=y),
+    )
 end

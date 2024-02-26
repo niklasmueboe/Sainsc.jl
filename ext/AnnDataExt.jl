@@ -7,26 +7,24 @@ using StereoSSAM
 function StereoSSAM.getlocalmaxima(
     T::Type{AnnData}, counts, localmax, kernel; genes=nothing
 )
-    X, genes, obs_names, coordinates = StereoSSAM._getlocalmaxima(
-        counts, localmax, kernel; genes=genes
-    )
+    X, genes, obs = getlocalmaxima(counts, localmax, kernel; genes=genes)
 
     return AnnData(;
-        X=X,
-        var_names=genes,
-        obs_names=obs_names,
-        obsm=Dict("spatial" => hcat(coordinates...)),
+        X=permutedims(X),
+        var_names=genes.gene,
+        obs_names=obs.id,
+        obsm=Dict("spatial" => hcat(obs.x, obs.y)),
     )
 end
 
 function StereoSSAM.readstereoseqbinned(T::Type{AnnData}, file, s::Integer)
-    X, genes, obs_names, coordinates = StereoSSAM._readstereoseqbinned(file, s)
+    X, genes, obs = readstereoseqbinned(file, s)
 
     return AnnData(;
         X=permutedims(X),
-        var_names=genes,
-        obs_names=obs_names,
-        obsm=Dict("spatial" => hcat(coordinates...)),
+        var_names=genes.gene,
+        obs_names=obs.bin_id,
+        obsm=Dict("spatial" => hcat(obs.x, obs.y)),
     )
 end
 
