@@ -6,6 +6,7 @@ using Base.Threads: @threads
 using DataFrames: DataFrame
 using OrderedCollections: OrderedDict
 using SparseArrays
+using Unzip: unzip
 
 """
     crop!(counts, slice)
