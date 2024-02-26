@@ -182,18 +182,20 @@ function assigncelltype(
 
     genes_exist = names(signatures) .∈ [named_axiskeys(counts)[1]]
     if !all(genes_exist)
-        @warn "Not all genes in 'signatures' exist in 'counts'. Missing genes will be skipped."
+        @warn "Not all genes in 'signatures' exist in 'counts'. " *
+            "Missing genes will be skipped."
     end
 
+    T = Int
+    S = Float32
+
     counts = counts(names(signatures)[genes_exist])
-    signatures = Matrix{Float32}(signatures[:, genes_exist])
-    convert.(Float32, kernel)
+    signatures = Matrix{S}(signatures[:, genes_exist])
+    kernel = convert.(S, kernel)
 
     chunked_counts, rows, cols, padrows, padcols = chunk(counts, kernel)
 
-    T = Int
-
-    cosine = BlockArray(undef_blocks, Matrix{eltype(kernel)}, rows, cols)
+    cosine = BlockArray(undef_blocks, Matrix{S}, rows, cols)
     celltypemap = BlockArray(undef_blocks, Matrix{T}, rows, cols)
 
     @threads for (i, (r1, r2)) in collect(enumerate(padrows))

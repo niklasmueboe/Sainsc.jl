@@ -26,7 +26,8 @@ function mask!(counts, mask::AbstractMatrix{Bool})
     inv_mask = .!mask
     @threads for i in eachindex(counts)
         x, y, _ = findnz(counts[i])
-        nonzeros(counts[i])[inv_mask[[CartesianIndex(i) for i in zip(x, y)]]] .= zero(eltype(counts[i]))
+        z = zero(eltype(counts[i]))
+        nonzeros(counts[i])[inv_mask[[CartesianIndex(i) for i in zip(x, y)]]] .= z
         dropzeros!(counts[i])
     end
 end

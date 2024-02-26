@@ -2,10 +2,10 @@ export readstereoseq
 
 using AxisKeys: wrapdims
 using Base.Broadcast: @__dot__
+using Base.Threads: @threads
 using CSV: read as readcsv
 using DataFrames
 using SparseArrays: sparse
-using Unzip: unzip
 
 function loadstereoseqfile(file)
     countcol_name = ["MIDCounts", "MIDCount", "UMICount"]
@@ -39,10 +39,13 @@ function readstereoseq(file)
     rows = maximum(df.x)
     cols = maximum(df.y)
 
-    genes, counts = collect(unzip((
-        (key.geneID, sparse(subdf.x, subdf.y, subdf.count, rows, cols)) for
-        (key, subdf) in pairs(groupby(df, :geneID))
-    )))
+    n = length(df.geneID.pool)
+    genes = Vector{eltype(df.geneID)}(undef, n)
+    counts = Vector{SparseMatrixCSC{eltype(df.count)}}(undef, n)
+    @threads for (i, (key, subdf)) in collect(enumerate(pairs(groupby(df, :geneID))))
+        genes[i] = key.geneID
+        counts[i] = sparse(subdf.x, subdf.y, subdf.count, rows, cols)
+    end
 
     return wrapdims(counts, genes)
 end
