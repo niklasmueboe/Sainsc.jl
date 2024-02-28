@@ -22,11 +22,6 @@ function gaussiankernel(σ::Real, r::Real)
     return Kernel.gaussian((σ, σ), (l, l))
 end
 
-function isinbounds(x, i, b)
-    x += i
-    return x >= 1 && x <= b
-end
-
 """
     kde(counts::AbstractArray{T}, kernel) where {T<:Real}
 
@@ -50,23 +45,25 @@ function kde!(
     rows = rowvals(counts)
     vals = convert.(S, nonzeros(counts))
 
+    kernel_row_min, kernel_row_max = extrema(axes(kernel, 1))
+    kernel_col_min, kernel_col_max = extrema(axes(kernel, 2))
+
     dest .= zero(S)
     for col in 1:n
+        c_min = max(1 - col, kernel_col_min)
+        c_max = min(n - col, kernel_col_max)
         for idx in nzrange(counts, col)
             row = rows[idx]
             val = vals[idx]
 
-            row_offsets = filter(x -> isinbounds(row, x, m), axes(kernel, 1))
-            col_offsets = filter(x -> isinbounds(col, x, n), axes(kernel, 2))
+            r_min = max(1 - row, kernel_row_min)
+            r_max = min(m - row, kernel_row_max)
 
-            for c in col_offsets, r in row_offsets
-                i = row + r
-                j = col + c
-                @inbounds dest[i, j] += val * kernel[r, c]
-            end
+            # @inbounds
+            @views @. dest[(row + r_min):(row + r_max), (col + c_min):(col + c_max)] +=
+                val * kernel[r_min:r_max, c_min:c_max]
         end
     end
-
     return dest
 end
 
