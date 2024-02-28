@@ -4,7 +4,7 @@ using AxisKeys: named_axiskeys
 using Base.Broadcast: @__dot__
 using Base.Threads: @threads
 using DataFrames: DataFrame
-using OrderedCollections: OrderedDict
+using PooledArrays
 using SparseArrays
 using Unzip: unzip
 
@@ -74,20 +74,8 @@ function getkdeforcoordinates(counts, coordinates, kernel; genes=nothing)
 end
 
 function categoricalcoordinates(x, y)
-    coordinates = OrderedDict{Tuple{Int,Int},Int}()
-    cat = 0
-    for xy in zip(x, y)
-        if !haskey(coordinates, xy) # TODO improve
-            cat += 1
-            coordinates[xy] = cat
-        end
-    end
-
-    # TODO multithread?
-    cat_coordinate = [coordinates[xy] for xy in zip(x, y)]
-    coordinate = unzip(keys(coordinates))
-
-    return cat_coordinate, coordinate
+    coordinates = PooledArray(collect(zip(x, y)), Int32)
+    return coordinates.refs, coordinates.pool
 end
 
 stringcoordinates(x, y) = @. string(x) * "_" * string(y)
