@@ -40,8 +40,13 @@ end
 Caclulate the totalrna as sum of all genes for each pixel.
 """
 function totalrna(counts)
-    x, y, v = (reduce(vcat, i) for i in unzip(findnz(c) for c in counts))
-    return collect(sparse(x, y, v, size(first(counts))...))
+    n = length(counts)
+    x, y, v = Vector{Vector}(undef, n), Vector{Vector}(undef, n), Vector{Vector}(undef, n)
+
+    @threads for (i, c) in collect(enumerate(counts))
+        x[i], y[i], v[i] = findnz(c)
+    end
+    return sparse((reduce(vcat, i) for i in (x, y, v))..., size(first(counts))...)
 end
 
 function getkdeforcoordinates(counts, coordinates, kernel; genes=nothing)
