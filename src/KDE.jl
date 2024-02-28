@@ -71,12 +71,10 @@ end
 """
     findlocalmaxima(counts, d::Integer, kernel)
 
-Find local maxima of the totalRNA KDE.
-
-Computes the [`kde`](@ref) of the [`totalrna`](@ref) to identify local maximas.
+Find local maxima of the [`kde`](@ref) of `counts`.
 """
 function findlocalmaxima(counts, d::Integer, kernel)
-    total_rna = kde(totalrna(counts), kernel)
+    total_rna = kde(collect(counts), kernel)
     return findlocalmax(total_rna; window=(2d + 1, 2d + 1))
 end
 
@@ -135,9 +133,9 @@ function calculatecosinesim(
         @. kde_norm += kde_gene^2
 
         weights = reshape(view(signatures, :, g2), 1, 1, n_celltypes)
-            if i == 1
+        if i == 1
             @. cosine = kde_gene * weights
-            else
+        else
             @. cosine += kde_gene * weights
         end
     end
