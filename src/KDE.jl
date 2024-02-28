@@ -123,7 +123,7 @@ end
 function calculatecosinesim(
     counts::KeyedArray, signatures::AbstractMatrix{T}, kernel::AbstractMatrix{T}
 ) where {T<:Real}
-    n_celltypes, n_genes = size(signatures)[1:2]
+    n_celltypes = size(signatures)[1]
     n, m = size(first(counts))
 
     cosine = Array{T}(undef, (n, m, n_celltypes))
@@ -133,22 +133,20 @@ function calculatecosinesim(
     for (i, (g1, g2)) in enumerate(zip(eachindex(counts), axes(signatures, 2)))
         kde!(counts[g1], kernel, kde_gene)
         @. kde_norm += kde_gene^2
-        for (j, ct) in enumerate(axes(signatures, 1))
+
+        weights = reshape(view(signatures, :, g2), 1, 1, n_celltypes)
             if i == 1
-                @. cosine[:, :, j] = kde_gene * signatures[ct, g2]
+            @. cosine = kde_gene * weights
             else
-                @views @. cosine[:, :, j] += kde_gene * signatures[ct, g2]
-            end
+            @. cosine += kde_gene * weights
         end
     end
 
     celltype_norm = map(norm, eachslice(signatures; dims=1))
-    celltype_norm = reshape(celltype_norm, 1, 1, length(celltype_norm))
-    @. cosine = cosine / celltype_norm
+    cosine ./= reshape(celltype_norm, 1, 1, n_celltypes)
     cosine, celltype = map((x -> dropdims(x; dims=3)), findmax(cosine; dims=3))
 
-    @. kde_norm = sqrt(kde_norm)
-    @. cosine /= kde_norm
+    @. cosine /= sqrt(kde_norm)
     @. cosine[iszero(kde_norm)] = 0
 
     celltypemap = map((x -> x.I[3]), celltype)
