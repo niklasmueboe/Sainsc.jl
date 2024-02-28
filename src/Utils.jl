@@ -73,9 +73,9 @@ function getkdeforcoordinates(counts, coordinates, kernel; genes=nothing)
     return sparse_hcat(Iterators.flatten(vec)...)
 end
 
-function categoricalcoordinates(x, y)
-    coordinates = PooledArray(collect(zip(x, y)), Int32)
-    return coordinates.refs, coordinates.pool
+function categoricalcoordinates(x...)
+    coordinates = PooledArray(collect(zip(x...)), Int32)
+    return coordinates.refs, unzip(coordinates.pool)
 end
 
 stringcoordinates(x, y) = @. string(x) * "_" * string(y)
