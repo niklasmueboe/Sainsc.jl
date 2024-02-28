@@ -61,8 +61,8 @@ function getkdeforcoordinates(counts, coordinates, kernel; genes=nothing)
         counts = counts(genes)
     end
 
-    batchsize = ceil(Int, length(counts) / Threads.nthreads())
-    n_batches = ceil(Int, length(counts) / batchsize)
+    batchsize = cld(length(counts), Threads.nthreads())
+    n_batches = cld(length(counts), batchsize)
     batches = Iterators.partition(eachindex(counts), batchsize)
 
     vec = Vector{Vector{SparseVector}}(undef, n_batches)

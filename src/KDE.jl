@@ -93,7 +93,7 @@ function chunk(counts, kernel::OffsetArray, sx=500, sy=500)
     padcols = Tuple{Int,Int}[]
     padrows = Tuple{Int,Int}[]
 
-    for j in 1:ceil(Int, n / sx)
+    for j in 1:cld(n, sx)
         left = (j - 1) * sx + 1
         right = j * sx
         l = max(1, left + x1)
@@ -103,7 +103,7 @@ function chunk(counts, kernel::OffsetArray, sx=500, sy=500)
         push!(cols, min(n, right) - max(1, left) + 1)
         push!(padcols, (max(0, left - l), min(0, right - r)))
 
-        for i in 1:ceil(Int, m / sy)
+        for i in 1:cld(m, sy)
             bottom = (i - 1) * sy + 1
             top = i * sy
             b = max(1, bottom + y1)
