@@ -14,7 +14,7 @@ function StereoSSAM.getlocalmaxima(T::Type{WsObj}, counts, localmax, kernel; gen
 
     rename!(genes, Dict(:gene => "name"))
 
-    return WsObj(Dict("raw_dat" => X), coordinates, genes, String[], nothing)
+    return WsObj(Dict("raw_dat" => X), coordinates, genes, String[], Dict())
 end
 
 function StereoSSAM.readstereoseqbinned(T::Type{WsObj}, file, s::Integer)
@@ -25,7 +25,7 @@ function StereoSSAM.readstereoseqbinned(T::Type{WsObj}, file, s::Integer)
 
     rename!(genes, Dict(:gene => "name"))
 
-    return WsObj(Dict("raw_dat" => X), coordinates, genes, String[], nothing)
+    return WsObj(Dict("raw_dat" => X), coordinates, genes, String[], Dict())
 end
 
 end # module AutomaticSingleCellToolboxExt
