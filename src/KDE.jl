@@ -69,13 +69,18 @@ end
 
 # Local maxima detection
 """
-    findlocalmaxima(counts, d::Integer, kernel)
+    findlocalmaxima(img, mindist::Integer; threshold::Real=0)
 
-Find local maxima of the [`kde`](@ref) of `counts`.
+Find local maxima of the `img`.
+
+The input should be a [`kde`](@ref) of the [`totalrna`](@ref) or comparable.
 """
-function findlocalmaxima(counts, d::Integer, kernel)
-    total_rna = kde(collect(counts), kernel)
-    return findlocalmax(total_rna; window=(2d + 1, 2d + 1))
+function findlocalmaxima(img, mindist::Integer; threshold::Real=0)
+    localmax = findlocalmax(img; window=(2mindist + 1, 2mindist + 1))
+    if threshold > 0
+        localmax = localmax[(img .> threshold)[localmax]]
+    end
+    return localmax
 end
 
 # Celltype assignment
