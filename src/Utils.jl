@@ -57,7 +57,7 @@ function getkdeforcoordinates(counts, coordinates, kernel; genes=nothing)
 
         for (i, gene) in enumerate(batch)
             kde!(counts[gene], kernel, kde_gene)
-            v[i] = sparsevec(kde_gene[coordinates])
+            v[i] = @views sparsevec(kde_gene[coordinates])
         end
         return v
     end
@@ -70,12 +70,12 @@ function getkdeforcoordinates(counts, coordinates, kernel; genes=nothing)
     n_batches = cld(length(counts), batchsize)
     batches = Iterators.partition(eachindex(counts), batchsize)
 
-    vec = Vector{Vector{SparseVector}}(undef, n_batches)
+    kde_coordinates = Vector{Vector{SparseVector}}(undef, n_batches)
     @threads for (i, batch) in collect(enumerate(batches))
-        vec[i] = _kdestack(counts, coordinates, kernel, batch)
+        kde_coordinates[i] = _kdestack(counts, coordinates, kernel, batch)
     end
 
-    return sparse_hcat(Iterators.flatten(vec)...)
+    return sparse_hcat(Iterators.flatten(kde_coordinates)...)
 end
 
 function categoricalcoordinates(x...)
