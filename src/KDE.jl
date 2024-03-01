@@ -157,6 +157,11 @@ function calculatecosinesim(
     return celltypemap, cosine
 end
 
+function smallestuint(n)
+    uints = (UInt8, UInt16, UInt32, UInt64)
+    return uints[findfirst(x -> typemax(x) >= n, uints)]
+end
+
 """
     function assigncelltype(
         counts::DimArray{T,1}, signatures::AbstractDataFrame, kernel; celltypes=nothing
@@ -167,12 +172,14 @@ Assign a celltype to each pixel.
 The cosine similarity is calculated using `signatures` to assign the celltype with the 
 highest similarity to each pixel.
 
+The `eltype(kernel)` will be used for calculations and `signatures` will be cast to it.
+
 # Arguments
 - `signatures::AbstractDataFrame`: celltype signatures (celltypes x genes).
 - `celltypes::Vector{AbstractString}=nothing`: celltype names.
 """
 function assigncelltype(
-    counts::DimArray{T,1}, signatures::AbstractDataFrame, kernel; celltypes=nothing
+    counts::AbstractDimArray{T,1}, signatures::AbstractDataFrame, kernel; celltypes=nothing
 ) where {T<:AbstractMatrix}
     if !isnothing(celltypes) && length(celltypes) != nrow(signatures)
         error("Length of 'celltypes' must match number of rows in 'signatures'")
@@ -184,14 +191,13 @@ function assigncelltype(
             "Missing genes will be skipped."
     end
 
-    S = Float32
-    U = Int
+    S = eltype(kernel)
+    U = smallestuint(nrow(signatures))
 
     signatures = signatures[!, genes_exist]
 
     @views counts = counts[At(names(signatures))]
     signatures = Matrix{S}(signatures)
-    kernel = convert.(S, kernel)
 
     chunked_counts, rows, cols, padrows, padcols = chunk(counts, kernel)
 
@@ -211,8 +217,7 @@ function assigncelltype(
     end
 
     cosine = collect(cosine)
-    celltypemap = collect(celltypemap)
-    celltypemap = compress(CategoricalArray{Union{Missing,U}}(celltypemap))
+    celltypemap = CategoricalMatrix{Union{Missing,U},U}(collect(celltypemap))
     @. celltypemap[iszero(cosine)] = missing
 
     if !isnothing(celltypes)
