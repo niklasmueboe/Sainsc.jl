@@ -1,9 +1,9 @@
 export crop!, getlocalmaxima, mask!, totalrna
 
-using AxisKeys: named_axiskeys
 using Base.Broadcast: @__dot__
 using Base.Threads: @threads
 using DataFrames: DataFrame
+using DimensionalData
 using PooledArrays
 using SparseArrays
 using Unzip: unzip
@@ -63,7 +63,7 @@ function getkdeforcoordinates(counts, coordinates, kernel; genes=nothing)
     end
 
     if !isnothing(genes)
-        counts = counts(genes)
+        @views counts = counts[At(genes)]
     end
 
     batchsize = cld(length(counts), Threads.nthreads())
@@ -92,12 +92,12 @@ stringcoordinates(x...) = [join((string(j) for j in i), "_") for i in zip(x...)]
 Load KDE with `kernel` for coordinates at `localmax`.
 
 # Arguments
-- `genes::Vector{AbstractString}=nothing`: vector of genes for which to calculate KDE.
+- `genes=nothing`: vector of genes for which to calculate KDE.
 """
 function getlocalmaxima(counts, localmax, kernel; genes=nothing)
     mat = getkdeforcoordinates(counts, localmax, kernel; genes=genes)
     if isnothing(genes)
-        genes = named_axiskeys(counts)[1]
+        genes = collect(dims(counts, 1))
     end
 
     x, y = unzip(map((c -> c.I), localmax))

@@ -1,10 +1,10 @@
 export gaussiankernel, findlocalmaxima, kde, assigncelltype
 
-using AxisKeys
 using Base.Broadcast: @__dot__
 using Base.Threads: @threads
 using BlockArrays: Block, BlockArray, undef_blocks
 using CategoricalArrays
+using DimensionalData
 using ImageFiltering:
     Kernel, imfilter, mapwindow, Fill, Algorithm, findlocalmaxima as findlocalmax
 using LinearAlgebra: norm
@@ -124,7 +124,7 @@ function chunk(counts, kernel::OffsetArray, sx=500, sy=500)
 end
 
 function calculatecosinesim(
-    counts::KeyedArray, signatures::AbstractMatrix{T}, kernel::AbstractMatrix{T}
+    counts, signatures::AbstractMatrix{T}, kernel::AbstractMatrix{T}
 ) where {T<:Real}
     n_celltypes = size(signatures, 1)
     n, m = size(first(counts))
@@ -158,9 +158,9 @@ function calculatecosinesim(
 end
 
 """
-    assigncelltype(
-        counts::KeyedArray, signatures::AbstractDataFrame, kernel; celltypes=nothing
-    )
+    function assigncelltype(
+        counts::DimArray{T,1}, signatures::AbstractDataFrame, kernel; celltypes=nothing
+    ) where {T<:AbstractMatrix}
 
 Assign a celltype to each pixel.
 
@@ -172,29 +172,31 @@ highest similarity to each pixel.
 - `celltypes::Vector{AbstractString}=nothing`: celltype names.
 """
 function assigncelltype(
-    counts::KeyedArray, signatures::AbstractDataFrame, kernel; celltypes=nothing
-)
+    counts::DimArray{T,1}, signatures::AbstractDataFrame, kernel; celltypes=nothing
+) where {T<:AbstractMatrix}
     if !isnothing(celltypes) && length(celltypes) != nrow(signatures)
         error("Length of 'celltypes' must match number of rows in 'signatures'")
     end
 
-    genes_exist = names(signatures) .∈ [named_axiskeys(counts)[1]]
+    genes_exist = names(signatures) .∈ [dims(counts, 1)]
     if !all(genes_exist)
         @warn "Not all genes in 'signatures' exist in 'counts'. " *
             "Missing genes will be skipped."
     end
 
-    T = Int
     S = Float32
+    U = Int
 
-    counts = counts(names(signatures)[genes_exist])
-    signatures = Matrix{S}(signatures[:, genes_exist])
+    signatures = signatures[!, genes_exist]
+
+    @views counts = counts[At(names(signatures))]
+    signatures = Matrix{S}(signatures)
     kernel = convert.(S, kernel)
 
     chunked_counts, rows, cols, padrows, padcols = chunk(counts, kernel)
 
     cosine = BlockArray(undef_blocks, Matrix{S}, rows, cols)
-    celltypemap = BlockArray(undef_blocks, Matrix{T}, rows, cols)
+    celltypemap = BlockArray(undef_blocks, Matrix{U}, rows, cols)
 
     @threads for (i, (r1, r2)) in collect(enumerate(padrows))
         @threads for (j, (c1, c2)) in collect(enumerate(padcols))
@@ -210,7 +212,7 @@ function assigncelltype(
 
     cosine = collect(cosine)
     celltypemap = collect(celltypemap)
-    celltypemap = compress(CategoricalArray{Union{Missing,T}}(celltypemap))
+    celltypemap = compress(CategoricalArray{Union{Missing,U}}(celltypemap))
     @. celltypemap[iszero(cosine)] = missing
 
     if !isnothing(celltypes)

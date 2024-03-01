@@ -1,10 +1,10 @@
 export readstereoseq, readstereoseqbinned
 
-using AxisKeys: wrapdims
 using Base.Broadcast: @__dot__
 using Base.Threads: @threads
 using CSV: read as readcsv
 using DataFrames
+using DimensionalData
 using SparseArrays: sparse
 
 function loadstereoseqfile(file)
@@ -47,7 +47,7 @@ function readstereoseq(file)
         counts[i] = sparse(subdf.x, subdf.y, subdf.count, rows, cols)
     end
 
-    return wrapdims(counts, genes)
+    return DimArray(counts, (Dim{:gene}(genes)))
 end
 
 """
