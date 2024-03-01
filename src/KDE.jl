@@ -126,7 +126,7 @@ end
 function calculatecosinesim(
     counts::KeyedArray, signatures::AbstractMatrix{T}, kernel::AbstractMatrix{T}
 ) where {T<:Real}
-    n_celltypes = size(signatures)[1]
+    n_celltypes = size(signatures, 1)
     n, m = size(first(counts))
 
     cosine = Array{T}(undef, (n, m, n_celltypes))

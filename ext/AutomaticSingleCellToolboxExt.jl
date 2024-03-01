@@ -10,7 +10,7 @@ function StereoSSAM.getlocalmaxima(T::Type{WsObj}, counts, localmax, kernel; gen
     X, genes, coordinates = getlocalmaxima(counts, localmax, kernel; genes=genes)
 
     coordinates[!, "cell_counts"] = vec(sum(X; dims=1))
-    coordinates[!, "cell_features"] = map(i -> length(nzrange(X, i)), 1:size(X)[2])
+    coordinates[!, "cell_features"] = map(i -> length(nzrange(X, i)), 1:size(X, 2))
 
     rename!(genes, Dict(:gene => "name"))
 
@@ -21,7 +21,7 @@ function StereoSSAM.readstereoseqbinned(T::Type{WsObj}, file, s::Integer)
     X, genes, coordinates = readstereoseqbinned(file, s)
 
     coordinates[!, "cell_counts"] = vec(sum(X; dims=1))
-    coordinates[!, "cell_features"] = map(i -> length(nzrange(X, i)), 1:size(X)[2])
+    coordinates[!, "cell_features"] = map(i -> length(nzrange(X, i)), 1:size(X, 2))
 
     rename!(genes, Dict(:gene => "name"))
 
