@@ -84,43 +84,40 @@ function findlocalmaxima(img, mindist::Integer; threshold::Real=0)
 end
 
 # Celltype assignment
+function chunk_slices(i, step, n, pad)
+    bound1 = (i - 1) * step + 1
+    bound2 = i * step
+
+    slice = max(1, bound1 + pad[1]):min(n, bound2 + pad[2])
+    reslice = range(1 + max(0, bound1 - slice[1]); length=min(step, n - bound1 + 1))
+    return slice, reslice
+end
+
 function chunk(counts, kernel::OffsetArray, sx=500, sy=500)
     m, n = size(first(counts))
-    x1, x2 = extrema(axes(kernel, 1))
-    y1, y2 = extrema(axes(kernel, 2))
+    pad_x = extrema(axes(kernel, 1))
+    pad_y = extrema(axes(kernel, 2))
 
     chunks = Dict{Block{2,Int},Any}()
 
-    cols = Int[]
-    rows = Int[]
-    padcols = Tuple{Int,Int}[]
-    padrows = Tuple{Int,Int}[]
+    colslices = UnitRange{Int}[]
+    rowslices = UnitRange{Int}[]
 
     for j in 1:cld(n, sx)
-        left = (j - 1) * sx + 1
-        right = j * sx
-        l = max(1, left + x1)
-        r = min(n, right + x2)
-
-        col_chunk = map(x -> x[:, l:r], counts)
-        push!(cols, min(n, right) - max(1, left) + 1)
-        push!(padcols, (max(0, left - l), min(0, right - r)))
+        slice_x, reslice_x = chunk_slices(j, sx, n, pad_x)
+        col_chunk = map(x -> x[:, slice_x], counts)
+        push!(colslices, reslice_x)
 
         for i in 1:cld(m, sy)
-            bottom = (i - 1) * sy + 1
-            top = i * sy
-            b = max(1, bottom + y1)
-            t = min(m, top + y2)
-
-            chunks[Block(i, j)] = map(x -> x[b:t, :], col_chunk)
+            slice_y, reslice_y = chunk_slices(i, sy, m, pad_y)
+            chunks[Block(i, j)] = map(x -> x[slice_y, :], col_chunk)
             if j == 1
-                push!(rows, min(m, top) - max(1, bottom) + 1)
-                push!(padrows, (max(0, bottom - b), min(0, top - t)))
+                push!(rowslices, reslice_y)
             end
         end
     end
 
-    return chunks, rows, cols, padrows, padcols
+    return chunks, rowslices, colslices
 end
 
 function calculatecosinesim(
@@ -199,20 +196,20 @@ function assigncelltype(
     @views counts = counts[At(names(signatures))]
     signatures = Matrix{S}(signatures)
 
-    chunked_counts, rows, cols, padrows, padcols = chunk(counts, kernel)
+    chunked_counts, rowslices, colslices = chunk(counts, kernel)
+    rows, cols = length.(rowslices), length.(colslices)
 
     cosine = BlockArray(undef_blocks, Matrix{S}, rows, cols)
     celltypemap = BlockArray(undef_blocks, Matrix{U}, rows, cols)
 
-    @threads for (i, (r1, r2)) in collect(enumerate(padrows))
-        @threads for (j, (c1, c2)) in collect(enumerate(padcols))
+    @threads for (i, r) in collect(enumerate(rowslices))
+        @threads for (j, c) in collect(enumerate(colslices))
             idx = Block(i, j)
             celltypemap_chunk, cosine_chunk = calculatecosinesim(
                 pop!(chunked_counts, idx), signatures, kernel
             )
-
-            celltypemap[idx] = celltypemap_chunk[(1 + r1):(end + r2), (1 + c1):(end + c2)]
-            cosine[idx] = cosine_chunk[(1 + r1):(end + r2), (1 + c1):(end + c2)]
+            @views celltypemap[idx] = celltypemap_chunk[r, c]
+            @views cosine[idx] = cosine_chunk[r, c]
         end
     end
 
