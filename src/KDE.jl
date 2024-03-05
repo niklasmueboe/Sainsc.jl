@@ -126,20 +126,29 @@ function calculatecosinesim(
     n_celltypes = size(signatures, 1)
     n, m = size(first(counts))
 
-    cosine = Array{T}(undef, (n, m, n_celltypes))
     kde_norm = zeros(T, (n, m))
     kde_gene = Array{T}(undef, (n, m))
 
-    for (i, (g1, g2)) in enumerate(zip(eachindex(counts), axes(signatures, 2)))
+    init = true
+    for (g1, g2) in zip(eachindex(counts), axes(signatures, 2))
+        if counts[g1] isa AbstractSparseArray && length(nonzeros(counts[g1])) == 0
+            continue
+        end
         kde!(counts[g1], kernel, kde_gene)
         @. kde_norm += kde_gene^2
 
         weights = reshape(view(signatures, :, g2), 1, 1, n_celltypes)
-        if i == 1
-            @. cosine = kde_gene * weights
+        if init
+            init = false
+            cosine::Array{T} = kde_gene .* weights
         else
             @. cosine += kde_gene * weights
         end
+    end
+
+    # fastpath if whole chunk was "empty"
+    if init
+        return zeros(UInt8, (n, m)), kde_norm
     end
 
     celltype_norm = map(norm, eachslice(signatures; dims=1))
