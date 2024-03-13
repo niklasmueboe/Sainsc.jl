@@ -131,7 +131,7 @@ function calculatecosinesim(
 
     init = true
     for (g1, g2) in zip(eachindex(counts), axes(signatures, 2))
-        if counts[g1] isa AbstractSparseArray && length(nonzeros(counts[g1])) == 0
+        if counts[g1] isa AbstractSparseArray && nnz(counts[g1]) == 0
             continue
         end
         kde!(counts[g1], kernel, kde_gene)
