@@ -224,6 +224,7 @@ function assigncelltype(
 
     cosine = collect(cosine)
     celltypemap = CategoricalMatrix{Union{Missing,U},U}(collect(celltypemap))
+    recode!(celltypemap, 0 => missing)
     @. celltypemap[iszero(cosine)] = missing
 
     if !isnothing(celltypes)
