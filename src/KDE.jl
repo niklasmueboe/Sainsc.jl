@@ -64,7 +64,7 @@ function kde!(
                 val * kernel[r_min:r_max, c_min:c_max]
         end
     end
-    return dest
+    return nothing
 end
 
 # Local maxima detection
