@@ -159,6 +159,7 @@ function calculatecosinesim(
     @. cosine[iszero(kde_norm)] = 0
 
     celltypemap = map((x -> x.I[3]), celltype)
+    @. celltypemap[iszero(cosine)] = 0
 
     return celltypemap, cosine
 end
@@ -225,7 +226,6 @@ function assigncelltype(
     cosine = collect(cosine)
     celltypemap = CategoricalMatrix{Union{Missing,U},U}(collect(celltypemap))
     recode!(celltypemap, 0 => missing)
-    @. celltypemap[iszero(cosine)] = missing
 
     if !isnothing(celltypes)
         celltypemap = recode(celltypemap, Dict(enumerate(celltypes))...)
