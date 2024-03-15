@@ -33,22 +33,22 @@ end
 
 function kde(counts::SparseMatrixCSC{T}, kernel::OffsetArray{S}) where {T<:Real,S<:Real}
     kde_dest = Array{S}(undef, size(counts))
-    kde!(counts, kernel, kde_dest)
+    kde!(kde_dest, counts, kernel)
     return kde_dest
 end
 
 function kde!(
-    counts::SparseMatrixCSC{T}, kernel::OffsetArray{S}, dest::Matrix{S}
+    dest::Matrix{T}, counts::SparseMatrixCSC{S}, kernel::OffsetArray{T}
 ) where {T<:Real,S<:Real}
     m, n = size(counts)
 
     rows = rowvals(counts)
-    vals = convert.(S, nonzeros(counts))
+    vals = convert.(T, nonzeros(counts))
 
     kernel_row_min, kernel_row_max = extrema(axes(kernel, 1))
     kernel_col_min, kernel_col_max = extrema(axes(kernel, 2))
 
-    dest .= zero(S)
+    dest .= zero(T)
     for col in 1:n
         c_min = max(1 - col, kernel_col_min)
         c_max = min(n - col, kernel_col_max)
@@ -134,7 +134,7 @@ function calculatecosinesim(
         if counts[g1] isa AbstractSparseArray && nnz(counts[g1]) == 0
             continue
         end
-        kde!(counts[g1], kernel, kde_gene)
+        kde!(kde_gene, counts[g1], kernel)
         @. kde_norm += kde_gene^2
 
         weights = reshape(view(signatures, :, g2), 1, 1, n_celltypes)

@@ -56,7 +56,7 @@ function getkdeforcoordinates(counts, coordinates, kernel; genes=nothing)
         kde_gene = Array{T}(undef, size(first(counts)))
 
         for (i, gene) in enumerate(batch)
-            kde!(counts[gene], kernel, kde_gene)
+            kde!(kde_gene, counts[gene], kernel)
             v[i] = @views sparsevec(kde_gene[coordinates])
         end
         return v
