@@ -121,13 +121,15 @@ function chunk(counts, kernel::OffsetArray, sx=500, sy=500)
 end
 
 function calculatecosinesim(
-    counts, signatures::AbstractMatrix{T}, kernel::AbstractMatrix{T}
+    counts,
+    signatures::AbstractMatrix{T},
+    kernel::AbstractMatrix{T},
+    unpad::Tuple{AbstractRange,AbstractRange},
 ) where {T<:Real}
     n_celltypes = size(signatures, 1)
-    n, m = size(first(counts))
 
-    kde_norm = zeros(T, (n, m))
-    kde_gene = Array{T}(undef, (n, m))
+    kde_norm = zeros(T, length.(unpad))
+    kde_gene = Array{T}(undef, size(first(counts)))
 
     init = true
     for (g1, g2) in zip(eachindex(counts), axes(signatures, 2))
@@ -135,20 +137,22 @@ function calculatecosinesim(
             continue
         end
         kde!(kde_gene, counts[g1], kernel)
-        @. kde_norm += kde_gene^2
 
         weights = reshape(view(signatures, :, g2), 1, 1, n_celltypes)
+        kde_gene_crop = @view kde_gene[unpad...]
+        @. kde_norm += kde_gene_crop^2
+
         if init
             init = false
-            cosine::Array{T} = kde_gene .* weights
+            cosine::Array{T} = kde_gene_crop .* weights
         else
-            @. cosine += kde_gene * weights
+            @. cosine += kde_gene_crop * weights
         end
     end
 
     # fastpath if whole chunk was "empty"
     if init
-        return zeros(UInt8, (n, m)), kde_norm
+        return zeros(UInt8, length.(unpad)), kde_norm
     end
 
     celltype_norm = map(norm, eachslice(signatures; dims=1))
@@ -216,10 +220,10 @@ function assigncelltype(
         @threads for (j, c) in collect(enumerate(colslices))
             idx = Block(i, j)
             celltypemap_chunk, cosine_chunk = calculatecosinesim(
-                pop!(chunked_counts, idx), signatures, kernel
+                pop!(chunked_counts, idx), signatures, kernel, (r, c)
             )
-            @views celltypemap[idx] = celltypemap_chunk[r, c]
-            @views cosine[idx] = cosine_chunk[r, c]
+            @views celltypemap[idx] = celltypemap_chunk
+            @views cosine[idx] = cosine_chunk
         end
     end
 
