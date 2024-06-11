@@ -1,11 +1,15 @@
+module IO
+
 export readstereoseq, readstereoseqbinned
+
+import ..Utils: categoricalcoordinates, stringcoordinates
 
 using Base.Broadcast: @__dot__
 using Base.Threads: @threads
 using CSV: read as readcsv
-using DataFrames
-using DimensionalData
-using SparseArrays: sparse
+using DataFrames: DataFrame, Not, groupby, rename!, select!, transform!
+using DimensionalData: DimArray, Dim
+using SparseArrays: SparseMatrixCSC, sparse
 
 function loadstereoseqfile(file)
     countcol_name = ["MIDCounts", "MIDCount", "UMICount"]
@@ -71,3 +75,5 @@ function readstereoseqbinned(file, s::Integer)
         DataFrame(; bin_id=stringcoordinates(x, y), x=x, y=y),
     )
 end
+
+end # module IO

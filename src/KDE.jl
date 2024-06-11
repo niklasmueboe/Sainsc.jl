@@ -1,15 +1,17 @@
-export gaussiankernel, findlocalmaxima, kde, assigncelltype
+module KDE
+
+export gaussiankernel, kde, assigncelltype
 
 using Base.Broadcast: @__dot__
 using Base.Threads: @threads
 using BlockArrays: Block, BlockArray, undef_blocks
-using CategoricalArrays
-using DimensionalData
-using ImageFiltering:
-    Kernel, imfilter, mapwindow, Fill, Algorithm, findlocalmaxima as findlocalmax
+using CategoricalArrays: CategoricalMatrix, recode, recode!
+using DataFrames: AbstractDataFrame, nrow
+using DimensionalData: AbstractDimArray, At, dims
+using ImageFiltering: Kernel, imfilter, Fill, Algorithm
 using LinearAlgebra: norm
 using OffsetArrays: OffsetArray
-using SparseArrays: SparseMatrixCSC
+using SparseArrays: AbstractSparseArray, SparseMatrixCSC, nnz, nonzeros, nzrange, rowvals
 
 # KDE
 """
@@ -65,22 +67,6 @@ function kde!(
         end
     end
     return nothing
-end
-
-# Local maxima detection
-"""
-    findlocalmaxima(img, mindist::Integer; threshold::Real=0)
-
-Find local maxima of the `img`.
-
-The input should be a [`kde`](@ref) of the [`totalrna`](@ref) or comparable.
-"""
-function findlocalmaxima(img, mindist::Integer; threshold::Real=0)
-    localmax = findlocalmax(img; window=(2mindist + 1, 2mindist + 1))
-    if threshold > 0
-        localmax = localmax[(img .> threshold)[localmax]]
-    end
-    return localmax
 end
 
 # Celltype assignment
@@ -237,3 +223,5 @@ function assigncelltype(
 
     return celltypemap, cosine
 end
+
+end # module KDE

@@ -1,11 +1,11 @@
-export crop!, getlocalmaxima, mask!, totalrna
+module Utils
+
+export crop!, mask!, totalrna
 
 using Base.Broadcast: @__dot__
 using Base.Threads: @threads
-using DataFrames: DataFrame
-using DimensionalData
-using PooledArrays
-using SparseArrays
+using PooledArrays: PooledArray
+using SparseArrays: dropzeros!, findnz, nonzeros, sparse
 using Unzip: unzip
 
 """
@@ -49,35 +49,6 @@ function totalrna(counts)
     return sparse((reduce(vcat, i) for i in (x, y, v))..., size(first(counts))...)
 end
 
-function getkdeforcoordinates(counts, coordinates, kernel; genes=nothing)
-    function _kdestack(counts, coordinates, kernel, batch)
-        T = eltype(kernel)
-        v = Vector{SparseVector{T}}(undef, length(batch))
-        kde_gene = Array{T}(undef, size(first(counts)))
-
-        for (i, gene) in enumerate(batch)
-            kde!(kde_gene, counts[gene], kernel)
-            v[i] = @views sparsevec(kde_gene[coordinates])
-        end
-        return v
-    end
-
-    if !isnothing(genes)
-        @views counts = counts[At(genes)]
-    end
-
-    batchsize = cld(length(counts), Threads.nthreads())
-    n_batches = cld(length(counts), batchsize)
-    batches = Iterators.partition(eachindex(counts), batchsize)
-
-    kde_coordinates = Vector{Vector{SparseVector}}(undef, n_batches)
-    @threads for (i, batch) in collect(enumerate(batches))
-        kde_coordinates[i] = _kdestack(counts, coordinates, kernel, batch)
-    end
-
-    return sparse_hcat(Iterators.flatten(kde_coordinates)...)
-end
-
 function categoricalcoordinates(x...)
     coordinates = PooledArray(collect(zip(x...)), Int32)
     return coordinates.refs, unzip(coordinates.pool)
@@ -86,25 +57,4 @@ end
 stringcoordinates(x, y) = @. string(x) * "_" * string(y)
 stringcoordinates(x...) = [join((string(j) for j in i), "_") for i in zip(x...)]
 
-"""
-    getlocalmaxima(counts, localmax, kernel; genes=nothing)
-
-Load KDE with `kernel` for coordinates at `localmax`.
-
-# Arguments
-- `genes=nothing`: vector of genes for which to calculate KDE.
-"""
-function getlocalmaxima(counts, localmax, kernel; genes=nothing)
-    mat = getkdeforcoordinates(counts, localmax, kernel; genes=genes)
-    if isnothing(genes)
-        genes = collect(dims(counts, 1))
-    end
-
-    x, y = unzip(map((c -> c.I), localmax))
-
-    return (
-        permutedims(mat),
-        DataFrame(; gene=genes),
-        DataFrame(; id=stringcoordinates(x, y), x=x, y=y),
-    )
-end
+end # module Utils
