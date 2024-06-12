@@ -23,3 +23,5 @@ makedocs(;
     plugins=[links],
     format=Documenter.HTML(; size_threshold_ignore=["examples/ExampleAnalysis.md"]),
 )
+
+deploydocs(; repo="github.com/niklasmueboe/StereoSSAM.jl.git")
