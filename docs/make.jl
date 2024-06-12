@@ -1,4 +1,25 @@
 using Documenter
+using DocumenterInterLinks
 using StereoSSAM
 
-makedocs(; sitename="StereoSSAM.jl")
+links = InterLinks(
+    # "CategoricalArrays" => "https://categoricalarrays.juliadata.org/stable/",
+    # "DimensionalData" => "https://rafaqz.github.io/DimensionalData.jl/dev/",
+    "Muon" => "https://scverse.org/Muon.jl/dev/",
+    "SparseArrays" => (
+        "https://docs.julialang.org/en/v1/stdlib/SparseArrays/",
+        "https://docs.julialang.org/en/v1/objects.inv",
+    ),
+)
+
+makedocs(;
+    sitename="StereoSSAM.jl",
+    pages=[
+        "Home" => "index.md",
+        "Example analysis" => "examples/ExampleAnalysis.md",
+        "Reference API" => "api.md",
+    ],
+    authors="Niklas Müller-Bötticher",
+    plugins=[links],
+    format=Documenter.HTML(; size_threshold_ignore=["examples/ExampleAnalysis.md"]),
+)

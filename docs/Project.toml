@@ -1,0 +1,7 @@
+[deps]
+Documenter           = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+DocumenterInterLinks = "d12716ef-a0f6-4df4-a9f1-a5a34e75c656"
+StereoSSAM           = "4c4340ea-7f9e-46b4-8512-61f1f6c41a11"
+
+[compat]
+Documenter = "1.3"

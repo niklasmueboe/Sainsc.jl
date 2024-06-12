@@ -1,15 +1,20 @@
-# StereoSSAM.jl Documentation
+# StereoSSAM.jl
 
-```@contents
-```
+TODO general introduction
 
-## Functions
+reference to python repo
 
-```@autodocs
-Modules = [StereoSSAM]
-```
+## Citation
+
+If you use `StereoSSAM.jl` for your research please consider citing
+TODO
 
 ## Index
 
-```@index
+```@contents
+Pages = [
+    "examples/ExampleAnalysis.md",
+    "api.md",
+]
+Depth = 3
 ```
