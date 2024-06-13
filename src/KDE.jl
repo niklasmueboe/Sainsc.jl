@@ -110,7 +110,8 @@ function calculatecosinesim(
     counts,
     signatures::AbstractMatrix{T},
     kernel::AbstractMatrix{T},
-    unpad::Tuple{AbstractRange,AbstractRange},
+    unpad::Tuple{AbstractRange,AbstractRange};
+    log::Bool=false,
 ) where {T<:Real}
     n_celltypes = size(signatures, 1)
 
@@ -123,6 +124,10 @@ function calculatecosinesim(
             continue
         end
         kde!(kde_gene, counts[g1], kernel)
+
+        if log
+            @. kde_gene = log1p(kde_gene)
+        end
 
         weights = reshape(view(signatures, :, g2), 1, 1, n_celltypes)
         kde_gene_crop = @view kde_gene[unpad...]
@@ -161,7 +166,11 @@ end
 
 """
     function assigncelltype(
-        counts::DimArray{T,1}, signatures::AbstractDataFrame, kernel; celltypes=nothing
+        counts::DimArray{T,1},
+        signatures::AbstractDataFrame,
+        kernel;
+        celltypes=nothing,
+        log::Bool=false,
     ) where {T<:AbstractMatrix}
 
 Assign a celltype to each pixel.
@@ -173,10 +182,16 @@ The `eltype(kernel)` will be used for calculations and `signatures` will be cast
 
 # Arguments
 - `signatures::AbstractDataFrame`: celltype signatures (celltypes x genes).
-- `celltypes::Vector{AbstractString}=nothing`: celltype names.
+- `celltypes::Vector{AbstractString}=nothing`: optional celltype names.
+- `log::Bool`: whether to log-transform the KDE. Useful if `signatures` are calculated 
+    from log-transformed gene expression.
 """
 function assigncelltype(
-    counts::AbstractDimArray{T,1}, signatures::AbstractDataFrame, kernel; celltypes=nothing
+    counts::AbstractDimArray{T,1},
+    signatures::AbstractDataFrame,
+    kernel;
+    celltypes=nothing,
+    log::Bool=false,
 ) where {T<:AbstractMatrix}
     if !isnothing(celltypes) && length(celltypes) != nrow(signatures)
         error("Length of 'celltypes' must match number of rows in 'signatures'")
@@ -206,7 +221,7 @@ function assigncelltype(
         @threads for (j, c) in collect(enumerate(colslices))
             idx = Block(i, j)
             celltypemap_chunk, cosine_chunk = calculatecosinesim(
-                pop!(chunked_counts, idx), signatures, kernel, (r, c)
+                pop!(chunked_counts, idx), signatures, kernel, (r, c); log=log
             )
             @views celltypemap[idx] = celltypemap_chunk
             @views cosine[idx] = cosine_chunk
