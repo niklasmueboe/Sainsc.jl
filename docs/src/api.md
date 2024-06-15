@@ -12,6 +12,7 @@ Pages = ["api.md"]
 
 ```@autodocs
 Modules = [
+    StereoSSAM.GridCount,
     StereoSSAM.IO,
     StereoSSAM.Utils,
     StereoSSAM.KDE,

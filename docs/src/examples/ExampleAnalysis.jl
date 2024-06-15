@@ -26,13 +26,13 @@ color_file = joinpath(data_path, "celltype_colors.json");
 
 We read the data from file using [`readstereoseq`](@ref). The input will 
 usually be a GEM file of a StereoSeq experiment. The output is a 
-`DimensionalData.DimArray` of gene counts stored as 
+[`GridCounts`](@ref) of gene counts stored as 
 [`SparseArrays.SparseMatrixCSC`](@extref). The input data stems from the
 original [Stereo-seq publication](https://doi.org/10.1016/j.cell.2022.04.003) and can
 be downloaded [here](https://db.cngb.org/stomics/mosta/download/).
 =#
 
-counts = readstereoseq(stereoseq_file);
+counts = readstereoseq(stereoseq_file)
 
 #=
 We also load pre-defined cell-type signatures
@@ -40,7 +40,6 @@ We also load pre-defined cell-type signatures
 
 using CSV
 using DataFrames
-using DimensionalData
 
 ## read pre-determined cell-type signatures
 signatures = CSV.read(signature_file, DataFrame);
@@ -48,7 +47,7 @@ celltypes = signatures.Celltype;
 select!(signatures, Not(:Celltype));
 
 ## remove genes that are not detected in Stereo-seq experiment
-signatures = signatures[:, names(signatures) .∈ [dims(counts, 1)]];
+signatures = signatures[:, names(signatures) .∈ [keys(counts)]];
 
 print(signatures[1:5, 1:8])
 
@@ -104,7 +103,7 @@ as `Muon.AnnData` object.
 
 using Muon
 
-ad = getlocalmaxima(AnnData, counts, lm, kernel; genes=names(signatures))
+adata = getlocalmaxima(AnnData, counts, lm, kernel; genes=names(signatures))
 
 #=
 ### Cell-type map
@@ -188,4 +187,4 @@ highly variable genes that can be used for analysis. We again here demonstrate i
 `Muon.AnnData`.
 =#
 
-ad = StereoSSAM.IO.readstereoseqbinned(AnnData, stereoseq_file, 50)
+adata = readstereoseqbinned(AnnData, stereoseq_file, 50)
