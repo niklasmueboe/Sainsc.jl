@@ -4,9 +4,7 @@ using Muon: AnnData
 
 using StereoSSAM
 
-function StereoSSAM.getlocalmaxima(
-    T::Type{AnnData}, counts, localmax, kernel; genes=nothing
-)
+function StereoSSAM.getlocalmaxima(::Type{AnnData}, counts, localmax, kernel; genes=nothing)
     X, genes, obs = getlocalmaxima(counts, localmax, kernel; genes=genes)
 
     return AnnData(;
@@ -17,8 +15,8 @@ function StereoSSAM.getlocalmaxima(
     )
 end
 
-function StereoSSAM.readstereoseqbinned(T::Type{AnnData}, file, s::Integer)
-    X, genes, obs = readstereoseqbinned(file, s)
+function StereoSSAM.readstereoseqbinned(::Type{AnnData}, file, binsize::Integer)
+    X, genes, obs = readstereoseqbinned(file, binsize)
 
     return AnnData(;
         X=permutedims(X),
