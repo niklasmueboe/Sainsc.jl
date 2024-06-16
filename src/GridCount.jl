@@ -30,7 +30,7 @@ mutable struct GridCounts{G,T<:Number} <: AbstractGridCounts
         shape = size(first(values(counts)))
         for (_, c) in counts
             if size(c) != shape
-                throw(DimensionMismatch(counts, "all `counts` must have the same size"))
+                throw(DimensionMismatch("All `counts` must have the same size"))
             end
         end
         return new{G,T}(counts, shape)
@@ -96,7 +96,7 @@ function Base.setindex!(collection::GridCounts, value, key)
     if size(value) == collection.shape
         setindex!(collection.counts, value, key)
     else
-        throw(DimensionMismatch(value, "all `counts` must have the same size"))
+        throw(DimensionMismatch("All `counts` must have the same size"))
     end
 end
 
@@ -133,6 +133,10 @@ Remove all counts in each gene layer for which `mask` is `false`.
 """
 
 function mask!(counts::GridCounts{<:Any,T}, mask::AbstractMatrix{Bool}) where {T<:Any}
+    if gridsize(counts) != size(mask)
+        throw(DimensionMismatch("Size of `mask` must match gridsize of `counts`"))
+    end
+
     inv_mask = .!mask
     z = zero(T)
     @threads for c in collect(values(counts))
