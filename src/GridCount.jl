@@ -1,6 +1,6 @@
 module GridCount
 
-export GridCounts, crop!, mask!, gridsize
+export GridCounts, crop!, mask!, gridsize, totalrna
 
 using Base.Threads: @threads
 using DataFrames: DataFrame, groupby, transform!
