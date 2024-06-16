@@ -1,10 +1,10 @@
 module GridCount
 
-export GridCounts, gridsize
+export GridCounts, crop!, mask!, gridsize
 
 using Base.Threads: @threads
 using DataFrames: DataFrame, groupby, transform!
-using SparseArrays: SparseMatrixCSC, sparse
+using SparseArrays: SparseMatrixCSC, dropzeros!, findnz, nonzeros, sparse
 
 """
     AbstractGridCounts
@@ -106,6 +106,55 @@ function Base.show(io::IO, x::GridCounts)
 end
 # Base.show(io::IO, m::MIME"text/plain", x::GridCounts) = print(io, x)
 
-gridsize(counts::GridCounts) = counts.shape
+"""
+    gridsize(counts)
+
+The size of the grid of each layer.
+"""
+gridsize(counts) = counts.shape
+
+"""
+    crop!(counts, slice)
+
+Crop each gene layer in counts by indexing with `slice`.
+"""
+function crop!(counts, slice)
+    for (g, c) in counts
+        counts.counts[g] = c[slice...]
+    end
+    counts.shape = size(first(values(counts)))
+    return nothing
+end
+
+"""
+    mask!(counts, mask::AbstractMatrix{Bool})
+
+Remove all counts in each gene layer for which `mask` is `false`.
+"""
+
+function mask!(counts::GridCounts{<:Any,T}, mask::AbstractMatrix{Bool}) where {T<:Any}
+    inv_mask = .!mask
+    z = zero(T)
+    @threads for c in collect(values(counts))
+        x, y, _ = findnz(c)
+        nonzeros(c)[inv_mask[[CartesianIndex(i) for i in zip(x, y)]]] .= z
+        dropzeros!(c)
+    end
+end
+
+"""
+    totalrna(counts)
+
+Caclulate the totalrna as sum of all genes for each pixel.
+"""
+function totalrna(counts::GridCounts)
+    n = length(counts)
+    x, y, v = Vector{Vector}(undef, n), Vector{Vector}(undef, n), Vector{Vector}(undef, n)
+
+    @threads for (i, c) in collect(enumerate(values(counts)))
+        x[i], y[i], v[i] = findnz(c)
+    end
+    return sparse((reduce(vcat, i) for i in (x, y, v))..., gridsize(counts)...)
+end
 
 end # module GridCount
