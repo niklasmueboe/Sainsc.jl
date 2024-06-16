@@ -101,7 +101,7 @@ function Base.setindex!(collection::GridCounts, value, key)
 end
 
 function Base.show(io::IO, x::GridCounts)
-    type = "GridCounts{" * string(keytype(x)) * ", " * string(eltype(valtype(x))) * "}"
+    type = "GridCounts{$(keytype(x)),$(eltype(valtype(x)))}"
     return print(io, type, " ", x.shape, " with ", length(x), " genes")
 end
 # Base.show(io::IO, m::MIME"text/plain", x::GridCounts) = print(io, x)
