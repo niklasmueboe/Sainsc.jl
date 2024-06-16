@@ -1,17 +1,22 @@
 module IO
 
-export readstereoseq, readstereoseqbinned
+export readstereoseq, readstereoseqbinned, readGEMfile
 
 import ..Utils: categoricalcoordinates, stringcoordinates
 
-using Base.Broadcast: @__dot__
-using Base.Threads: @threads
-using CSV: read as readcsv
-using DataFrames: DataFrame, Not, groupby, rename!, select!, transform!
-using DimensionalData: DimArray, Dim
-using SparseArrays: SparseMatrixCSC, sparse
+using ..GridCount: GridCounts
 
-function loadstereoseqfile(file)
+using Base.Broadcast: @__dot__
+using CSV: read as readcsv
+using DataFrames: DataFrame, Not, rename!, select!, transform!
+using SparseArrays: sparse
+
+"""
+    readGEMfile(file)
+
+Read `file` in GEM format as `DataFrames.DataFrame`.
+"""
+function readGEMfile(file)
     countcol_name = ["MIDCounts", "MIDCount", "UMICount"]
     countcol_type = Dict(zip(countcol_name, Iterators.repeated(Int16)))
 
@@ -27,42 +32,29 @@ function loadstereoseqfile(file)
         end
     end
 
-    transform!(df, [:x, :y] .=> (x -> x .- (minimum(x) - one(eltype(x)))) .=> [:x, :y])
-
     return df
 end
 
 """
     readstereoseq(file)
 
-Read StereoSeq `file` as vector of SparseMatrixCSC.
+Read StereoSeq `file` as [`GridCounts`](@ref).
 """
 function readstereoseq(file)
-    df = loadstereoseqfile(file)
-
-    rows = maximum(df.x)
-    cols = maximum(df.y)
-
-    n = length(df.geneID.pool)
-    genes = Vector{eltype(df.geneID)}(undef, n)
-    counts = Vector{SparseMatrixCSC{eltype(df.count)}}(undef, n)
-    @threads for (i, (key, subdf)) in collect(enumerate(pairs(groupby(df, :geneID))))
-        genes[i] = key.geneID
-        counts[i] = sparse(subdf.x, subdf.y, subdf.count, rows, cols)
-    end
-
-    return DimArray(counts, (Dim{:gene}(genes)))
+    df = readGEMfile(file)
+    return GridCounts(df)
 end
 
 """
-    readstereoseqbinned(file, s::Integer)
+    readstereoseqbinned(file, binsize::Integer)
 
-Read StereoSeq `file` and aggregate locations with bin size `s`.
+Read StereoSeq `file` and aggregate into bins.
 """
-function readstereoseqbinned(file, s::Integer)
-    df = loadstereoseqfile(file)
+function readstereoseqbinned(file, binsize::Integer)
+    df = readGEMfile(file)
 
-    transform!(df, @. [:x, :y] => (x -> div(x - 1, s) + 1) => [:x, :y])
+    transform!(df, [:x, :y] .=> (x -> x .- minimum(x)) .=> [:x, :y])
+    transform!(df, @. [:x, :y] => (x -> div(x, binsize) + 1) => [:x, :y])
 
     cat_coord, (x, y) = categoricalcoordinates(df.x, df.y)
     select!(df, Not([:x, :y]))

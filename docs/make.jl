@@ -4,7 +4,8 @@ using StereoSSAM
 
 links = InterLinks(
     # "CategoricalArrays" => "https://categoricalarrays.juliadata.org/stable/",
-    # "DimensionalData" => "https://rafaqz.github.io/DimensionalData.jl/dev/",
+    # "DataFrames" => "https://dataframes.juliadata.org/stable/",
+    # "OffsetArrays" => "https://juliaarrays.github.io/OffsetArrays.jl/stable/",
     "Muon" => "https://scverse.org/Muon.jl/dev/",
     "SparseArrays" => (
         "https://docs.julialang.org/en/v1/stdlib/SparseArrays/",

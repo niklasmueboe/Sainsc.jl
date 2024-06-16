@@ -2,12 +2,13 @@ module KDE
 
 export gaussiankernel, kde, assigncelltype
 
+using ..GridCount: GridCounts
+
 using Base.Broadcast: @__dot__
 using Base.Threads: @threads
 using BlockArrays: Block, BlockArray, undef_blocks
 using CategoricalArrays: CategoricalMatrix, recode, recode!
 using DataFrames: AbstractDataFrame, nrow
-using DimensionalData: AbstractDimArray, At, dims
 using ImageFiltering: Kernel, imfilter, Fill, Algorithm
 using LinearAlgebra: norm
 using OffsetArrays: OffsetArray
@@ -28,6 +29,9 @@ end
     kde(counts::AbstractArray{T}, kernel) where {T<:Real}
 
 Calculate kernel density estimate.
+
+# Arguments
+- `kernel`: usually a centered `OffsetArrays.OffsetArray`.
 """
 function kde(counts::AbstractArray{T}, kernel) where {T<:Real}
     return imfilter(counts, kernel, Fill(zero(T)), Algorithm.FIR())
@@ -40,7 +44,7 @@ function kde(counts::SparseMatrixCSC{T}, kernel::OffsetArray{S}) where {T<:Real,
 end
 
 function kde!(
-    dest::Matrix{T}, counts::SparseMatrixCSC{S}, kernel::OffsetArray{T}
+    dest::AbstractMatrix{T}, counts::SparseMatrixCSC{S}, kernel::AbstractMatrix{T}
 ) where {T<:Real,S<:Real}
     m, n = size(counts)
 
@@ -111,7 +115,7 @@ function calculatecosinesim(
     signatures::AbstractMatrix{T},
     kernel::AbstractMatrix{T},
     unpad::Tuple{AbstractRange,AbstractRange};
-    log::Bool=false,
+    log=false,
 ) where {T<:Real}
     n_celltypes = size(signatures, 1)
 
@@ -166,12 +170,8 @@ end
 
 """
     function assigncelltype(
-        counts::DimArray{T,1},
-        signatures::AbstractDataFrame,
-        kernel;
-        celltypes=nothing,
-        log::Bool=false,
-    ) where {T<:AbstractMatrix}
+        counts::GridCounts, signatures::AbstractDataFrame, kernel; celltypes=nothing, log=false
+    )
 
 Assign a celltype to each pixel.
 
@@ -187,31 +187,28 @@ The `eltype(kernel)` will be used for calculations and `signatures` will be cast
     from log-transformed gene expression.
 """
 function assigncelltype(
-    counts::AbstractDimArray{T,1},
-    signatures::AbstractDataFrame,
-    kernel;
-    celltypes=nothing,
-    log::Bool=false,
-) where {T<:AbstractMatrix}
+    counts::GridCounts, signatures::AbstractDataFrame, kernel; celltypes=nothing, log=false
+)
     if !isnothing(celltypes) && length(celltypes) != nrow(signatures)
         error("Length of 'celltypes' must match number of rows in 'signatures'")
     end
 
-    genes_exist = names(signatures) .∈ [dims(counts, 1)]
-    if !all(genes_exist)
+    genes = names(signatures)
+    exist = genes .∈ [keys(counts)]
+    if !all(exist)
         @warn "Not all genes in 'signatures' exist in 'counts'. " *
             "Missing genes will be skipped."
+        genes = genes[exist]
     end
 
     S = eltype(kernel)
     U = smallestuint(nrow(signatures))
 
-    signatures = signatures[!, genes_exist]
+    signatures = signatures[!, exist]
 
-    @views counts = counts[At(names(signatures))]
     signatures = Matrix{S}(signatures)
 
-    chunked_counts, rowslices, colslices = chunk(counts, kernel)
+    chunked_counts, rowslices, colslices = chunk([counts[g] for g in genes], kernel)
     rows, cols = length.(rowslices), length.(colslices)
 
     cosine = BlockArray(undef_blocks, Matrix{S}, rows, cols)
