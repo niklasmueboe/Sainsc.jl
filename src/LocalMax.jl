@@ -63,7 +63,7 @@ Load KDE with `kernel` for coordinates at `localmax`.
 - `genes=nothing`: vector of genes for which to calculate KDE. If `nothing` all genes are 
     used.
 """
-function getlocalmaxima(counts::GridCounts, localmax, kernel; genes=nothing)
+function getlocalmaxima(counts, localmax, kernel; genes=nothing)
     if isnothing(genes)
         genes = Vector(keys(counts))
     else

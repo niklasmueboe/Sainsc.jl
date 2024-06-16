@@ -151,7 +151,7 @@ end
 
 Caclulate the totalrna as sum of all genes for each pixel.
 """
-function totalrna(counts::GridCounts)
+function totalrna(counts)
     n = length(counts)
     x, y, v = Vector{Vector}(undef, n), Vector{Vector}(undef, n), Vector{Vector}(undef, n)
 

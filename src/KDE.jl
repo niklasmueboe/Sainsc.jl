@@ -18,7 +18,7 @@ using SparseArrays: AbstractSparseArray, SparseMatrixCSC, nnz, nonzeros, nzrange
 """
     gaussiankernel(σ::Real, r::Real)
 
-Generate a gaussian kernel with bandwidth `σ` and radius `r*σ`
+Generate a gaussian kernel with bandwidth `σ` and radius `r * σ`
 """
 function gaussiankernel(σ::Real, r::Real)
     l = ceil(Int, 2r * σ + 1)
@@ -83,7 +83,7 @@ function chunk_slices(i, step, n, pad)
     return slice, reslice
 end
 
-function chunk(counts, kernel::OffsetArray, sx=500, sy=500)
+function chunk(counts, kernel, sx=500, sy=500)
     m, n = size(first(counts))
     pad_x = extrema(axes(kernel, 1))
     pad_y = extrema(axes(kernel, 2))
@@ -111,11 +111,7 @@ function chunk(counts, kernel::OffsetArray, sx=500, sy=500)
 end
 
 function calculatecosinesim(
-    counts,
-    signatures::AbstractMatrix{T},
-    kernel::AbstractMatrix{T},
-    unpad::Tuple{AbstractRange,AbstractRange};
-    log=false,
+    counts, signatures::AbstractMatrix{T}, kernel::AbstractMatrix{T}, unpad; log=false
 ) where {T<:Real}
     n_celltypes = size(signatures, 1)
 
@@ -169,9 +165,7 @@ function smallestuint(n)
 end
 
 """
-    function assigncelltype(
-        counts::GridCounts, signatures::AbstractDataFrame, kernel; celltypes=nothing, log=false
-    )
+    assigncelltype(counts, signatures, kernel; celltypes=nothing, log=false)
 
 Assign a celltype to each pixel.
 
@@ -186,9 +180,7 @@ The `eltype(kernel)` will be used for calculations and `signatures` will be cast
 - `log::Bool`: whether to log-transform the KDE. Useful if `signatures` are calculated 
     from log-transformed gene expression.
 """
-function assigncelltype(
-    counts::GridCounts, signatures::AbstractDataFrame, kernel; celltypes=nothing, log=false
-)
+function assigncelltype(counts, signatures, kernel; celltypes=nothing, log=false)
     if !isnothing(celltypes) && length(celltypes) != nrow(signatures)
         error("Length of 'celltypes' must match number of rows in 'signatures'")
     end
@@ -201,17 +193,17 @@ function assigncelltype(
         genes = genes[exist]
     end
 
-    S = eltype(kernel)
+    T = eltype(kernel)
     U = smallestuint(nrow(signatures))
 
     signatures = signatures[!, exist]
 
-    signatures = Matrix{S}(signatures)
+    signatures = Matrix{T}(signatures)
 
     chunked_counts, rowslices, colslices = chunk([counts[g] for g in genes], kernel)
     rows, cols = length.(rowslices), length.(colslices)
 
-    cosine = BlockArray(undef_blocks, Matrix{S}, rows, cols)
+    cosine = BlockArray(undef_blocks, Matrix{T}, rows, cols)
     celltypemap = BlockArray(undef_blocks, Matrix{U}, rows, cols)
 
     @threads for (i, r) in collect(enumerate(rowslices))
