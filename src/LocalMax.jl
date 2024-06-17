@@ -2,12 +2,12 @@ module LocalMax
 
 export getlocalmaxima, findlocalmaxima
 
+import ..GridCount: GridCounts
 import ..Utils: stringcoordinates
 import ..KDE: kde!
 
 using Base.Threads: @threads
 using DataFrames: DataFrame
-using DimensionalData: At, dims
 using ImageFiltering: findlocalmaxima as findlocalmax
 using SparseArrays: SparseVector, sparsevec, sparse_hcat
 using Unzip: unzip
@@ -18,7 +18,7 @@ using Unzip: unzip
 Find local maxima of the `img`.
 
 The input should be a [`kde`](@ref StereoSSAM.KDE.kde) of the 
-[`totalrna`](@ref StereoSSAM.Utils.totalrna) or comparable.
+[`totalrna`](@ref StereoSSAM.GridCount.totalrna) or comparable.
 """
 function findlocalmaxima(img, mindist::Integer; threshold::Real=0)
     localmax = findlocalmax(img; window=(2mindist + 1, 2mindist + 1))
@@ -28,21 +28,17 @@ function findlocalmaxima(img, mindist::Integer; threshold::Real=0)
     return localmax
 end
 
-function getkdeforcoordinates(counts, coordinates, kernel; genes=nothing)
+function getkdeforcoordinates(counts, coordinates, kernel)
     function _kdestack(counts, coordinates, kernel, batch)
         T = eltype(kernel)
         v = Vector{SparseVector{T}}(undef, length(batch))
         kde_gene = Array{T}(undef, size(first(counts)))
 
-        for (i, gene) in enumerate(batch)
-            kde!(kde_gene, counts[gene], kernel)
+        for (i, j) in enumerate(batch)
+            kde!(kde_gene, counts[j], kernel)
             v[i] = @views sparsevec(kde_gene[coordinates])
         end
         return v
-    end
-
-    if !isnothing(genes)
-        @views counts = counts[At(genes)]
     end
 
     batchsize = cld(length(counts), Threads.nthreads())
@@ -63,13 +59,22 @@ end
 Load KDE with `kernel` for coordinates at `localmax`.
 
 # Arguments
-- `genes=nothing`: vector of genes for which to calculate KDE.
+- `localmax`: vector of locations (indices).
+- `genes=nothing`: vector of genes for which to calculate KDE. If `nothing` all genes are 
+    used.
 """
 function getlocalmaxima(counts, localmax, kernel; genes=nothing)
-    mat = getkdeforcoordinates(counts, localmax, kernel; genes=genes)
     if isnothing(genes)
-        genes = collect(dims(counts, 1))
+        genes = Vector(keys(counts))
+    else
+        exist = genes .∈ [keys(counts)]
+        if !all(exist)
+            @warn "Not all `genes` exist in 'counts'. Missing `genes` will be skipped."
+        end
+        genes = genes[exist]
     end
+
+    mat = getkdeforcoordinates([counts[g] for g in genes], localmax, kernel)
 
     x, y = unzip(map((c -> c.I), localmax))
 

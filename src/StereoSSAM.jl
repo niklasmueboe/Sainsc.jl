@@ -1,6 +1,7 @@
 module StereoSSAM
 
-export readstereoseq,
+export GridCounts,
+    readstereoseq,
     readstereoseqbinned,
     crop!,
     mask!,
@@ -11,11 +12,13 @@ export readstereoseq,
     findlocalmaxima,
     getlocalmaxima
 
+include("GridCount.jl")
 include("Utils.jl")
 include("IO.jl")
 include("KDE.jl")
 include("LocalMax.jl")
 
+using .GridCount
 using .Utils
 using .IO
 using .KDE
