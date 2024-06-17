@@ -131,7 +131,6 @@ end
 
 Remove all counts in each gene layer for which `mask` is `false`.
 """
-
 function mask!(counts::GridCounts{<:Any,T}, mask::AbstractMatrix{Bool}) where {T<:Any}
     if gridsize(counts) != size(mask)
         throw(DimensionMismatch("Size of `mask` must match gridsize of `counts`"))

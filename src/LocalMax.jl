@@ -18,7 +18,7 @@ using Unzip: unzip
 Find local maxima of the `img`.
 
 The input should be a [`kde`](@ref StereoSSAM.KDE.kde) of the 
-[`totalrna`](@ref StereoSSAM.Utils.totalrna) or comparable.
+[`totalrna`](@ref StereoSSAM.GridCount.totalrna) or comparable.
 """
 function findlocalmaxima(img, mindist::Integer; threshold::Real=0)
     localmax = findlocalmax(img; window=(2mindist + 1, 2mindist + 1))
