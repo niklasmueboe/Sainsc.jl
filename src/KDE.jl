@@ -153,7 +153,7 @@ function calculatecosinesim(
     @. cosine /= sqrt(kde_norm)
     @. cosine[iszero(kde_norm)] = 0
 
-    celltypemap = map((x -> x.I[3]), celltype)
+    celltypemap = map((x -> x[3]), celltype)
     @. celltypemap[iszero(cosine)] = 0
 
     return celltypemap, cosine
