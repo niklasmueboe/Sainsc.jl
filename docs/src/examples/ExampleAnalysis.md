@@ -39,7 +39,7 @@ counts = readstereoseq(stereoseq_file)
 ````
 
 ````
-GridCounts{InlineStrings.String15, Int16} (10500, 13950) with 26177 genes
+GridCounts{String,Int16} (10500, 13950) with 26177 genes
 ````
 
 We also load pre-defined cell-type signatures

@@ -42,6 +42,7 @@ Read StereoSeq `file` as [`GridCounts`](@ref).
 """
 function readstereoseq(file)
     df = readGEMfile(file)
+    transform!(df, :geneID => (x -> map(y -> convert(String, y), x; pure=true)) => :geneID)
     return GridCounts(df)
 end
 
