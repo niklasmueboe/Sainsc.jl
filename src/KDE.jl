@@ -26,26 +26,26 @@ function gaussiankernel(σ::Real, r::Real)
 end
 
 """
-    kde(counts::AbstractArray{T}, kernel) where {T<:Real}
+    kde(counts, kernel)
 
 Calculate kernel density estimate.
 
 # Arguments
 - `kernel`: usually a centered `OffsetArrays.OffsetArray`.
 """
-function kde(counts::AbstractArray{T}, kernel) where {T<:Real}
-    return imfilter(counts, kernel, Fill(zero(T)), Algorithm.FIR())
+function kde(counts, kernel)
+    return imfilter(counts, kernel, Fill(zero(eltype(counts))), Algorithm.FIR())
 end
 
-function kde(counts::SparseMatrixCSC{T}, kernel::OffsetArray{S}) where {T<:Real,S<:Real}
-    kde_dest = Array{S}(undef, size(counts))
+function kde(counts::SparseMatrixCSC, kernel)
+    kde_dest = Array{eltype(kernel)}(undef, size(counts))
     kde!(kde_dest, counts, kernel)
     return kde_dest
 end
 
 function kde!(
-    dest::AbstractMatrix{T}, counts::SparseMatrixCSC{S}, kernel::AbstractMatrix{T}
-) where {T<:Real,S<:Real}
+    dest::AbstractMatrix{T}, counts::SparseMatrixCSC, kernel::AbstractMatrix{T}
+) where {T}
     m, n = size(counts)
 
     rows = rowvals(counts)
@@ -110,10 +110,10 @@ function chunk(counts, kernel, sx=500, sy=500)
     return chunks, rowslices, colslices
 end
 
-function calculatecosinesim(
-    counts, signatures::AbstractMatrix{T}, kernel::AbstractMatrix{T}, unpad; log=false
-) where {T<:Real}
+function calculatecosinesim(counts, signatures, kernel, unpad; log=false)
     n_celltypes = size(signatures, 1)
+
+    T = promote_type(eltype(signatures), eltype(kernel))
 
     kde_norm = zeros(T, length.(unpad))
     kde_gene = Array{T}(undef, size(first(counts)))
