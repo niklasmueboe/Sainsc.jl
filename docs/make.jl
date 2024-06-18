@@ -7,10 +7,7 @@ links = InterLinks(
     # "DataFrames" => "https://dataframes.juliadata.org/stable/",
     # "OffsetArrays" => "https://juliaarrays.github.io/OffsetArrays.jl/stable/",
     "Muon" => "https://scverse.org/Muon.jl/dev/",
-    "SparseArrays" => (
-        "https://docs.julialang.org/en/v1/stdlib/SparseArrays/",
-        "https://docs.julialang.org/en/v1/objects.inv",
-    ),
+    "SparseArrays" => "https://docs.julialang.org/en/v1/",
 )
 
 makedocs(;
