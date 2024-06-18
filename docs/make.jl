@@ -1,6 +1,6 @@
 using Documenter
 using DocumenterInterLinks
-using StereoSSAM
+using Sainsc
 
 links = InterLinks(
     # "CategoricalArrays" => "https://categoricalarrays.juliadata.org/stable/",
@@ -14,7 +14,7 @@ links = InterLinks(
 )
 
 makedocs(;
-    sitename="StereoSSAM.jl",
+    sitename="Sainsc.jl",
     pages=[
         "Home" => "index.md",
         "Example analysis" => "examples/ExampleAnalysis.md",
@@ -25,4 +25,4 @@ makedocs(;
     format=Documenter.HTML(; size_threshold_ignore=["examples/ExampleAnalysis.md"]),
 )
 
-deploydocs(; repo="github.com/niklasmueboe/StereoSSAM.jl.git")
+deploydocs(; repo="github.com/niklasmueboe/Sainsc.jl.git")

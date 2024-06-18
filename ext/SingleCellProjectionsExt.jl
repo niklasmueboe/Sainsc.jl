@@ -2,15 +2,13 @@ module SingleCellProjectionsExt
 
 using SingleCellProjections: DataMatrix
 
-using StereoSSAM
+using Sainsc
 
-function StereoSSAM.getlocalmaxima(
-    ::Type{DataMatrix}, counts, localmax, kernel; genes=nothing
-)
+function Sainsc.getlocalmaxima(::Type{DataMatrix}, counts, localmax, kernel; genes=nothing)
     return DataMatrix(getlocalmaxima(counts, localmax, kernel; genes=genes))
 end
 
-function StereoSSAM.readstereoseqbinned(::Type{DataMatrix}, file, binsize::Integer)
+function Sainsc.readstereoseqbinned(::Type{DataMatrix}, file, binsize::Integer)
     return DataMatrix(readstereoseqbinned(file, binsize))
 end
 

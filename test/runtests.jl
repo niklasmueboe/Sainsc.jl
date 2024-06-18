@@ -1,5 +1,5 @@
 using Test
-using StereoSSAM
+using Sainsc
 
 include("Aqua.jl")
 include("utils.jl")

@@ -1,3 +1,3 @@
 using Aqua
 
-Aqua.test_all(StereoSSAM; ambiguities=(recursive = false))
+Aqua.test_all(Sainsc; ambiguities=(recursive = false))

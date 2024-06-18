@@ -2,14 +2,14 @@
 # Example analysis
 
 This is an example workflow demonstrating all the different functionalities the 
-`StereoSSAM.jl` package offers.
+`Sainsc.jl` package offers.
 
 ## General workflow
 
 We start by loading the package and defining the path of some example data.
 =#
 
-using StereoSSAM
+using Sainsc
 
 using ImageTransformations
 using ImageShow
@@ -97,7 +97,7 @@ println("$(length(lm)) local maxima detected")
 #=
 Once we identified the local maxima we can load them for a defined set of genes. 
 [`getlocalmaxima`](@ref) allows you to load the maxima in a variety of output types.
-Have a look at the existing `StereoSSAM.jl` extensions. Here we are going to load them
+Have a look at the existing `Sainsc.jl` extensions. Here we are going to load them
 as `Muon.AnnData` object.
 =#
 
@@ -154,7 +154,7 @@ simshow(imresize(celltype_img; ratio=1 / 45))
 #=
 ## Utils
 
-Some additional useful functions are included in `StereoSSAM.jl`.
+Some additional useful functions are included in `Sainsc.jl`.
 
 ### Cropping & Masking
 

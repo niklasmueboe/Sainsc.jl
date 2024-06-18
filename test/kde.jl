@@ -1,4 +1,4 @@
-using StereoSSAM
+using Sainsc
 using Test
 
 using OffsetArrays: centered
@@ -33,12 +33,12 @@ kernel = centered([
 ])
 
 @testset "smallestuint" begin
-    @test StereoSSAM.KDE.smallestuint(0) == UInt8
-    @test StereoSSAM.KDE.smallestuint(7) == UInt8
-    @test StereoSSAM.KDE.smallestuint(255) == UInt8
-    @test StereoSSAM.KDE.smallestuint(256) == UInt16
-    @test StereoSSAM.KDE.smallestuint(100_000) == UInt32
-    @test_throws DomainError StereoSSAM.KDE.smallestuint(-1)
+    @test Sainsc.KDE.smallestuint(0) == UInt8
+    @test Sainsc.KDE.smallestuint(7) == UInt8
+    @test Sainsc.KDE.smallestuint(255) == UInt8
+    @test Sainsc.KDE.smallestuint(256) == UInt16
+    @test Sainsc.KDE.smallestuint(100_000) == UInt32
+    @test_throws DomainError Sainsc.KDE.smallestuint(-1)
 end
 
 @testset "gaussiankernel" begin
@@ -57,5 +57,5 @@ end
     counts = [sparse(input), sparse(input)]
     coords = map(CartesianIndex, [(1, 1), (2, 3), (2, 4)])
 
-    StereoSSAM.LocalMax.getkdeforcoordinates(counts, coords, kernel) == kdeatcoord
+    Sainsc.LocalMax.getkdeforcoordinates(counts, coords, kernel) == kdeatcoord
 end

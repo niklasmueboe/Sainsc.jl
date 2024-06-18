@@ -3,9 +3,9 @@ module CellScopesExt
 using DataFrames: rename!
 using CellScopes: RawCountObject
 
-using StereoSSAM
+using Sainsc
 
-function StereoSSAM.getlocalmaxima(
+function Sainsc.getlocalmaxima(
     ::Type{RawCountObject}, counts, localmax, kernel; genes=nothing
 )
     mat, genes, coordinates = getlocalmaxima(counts, localmax, kernel; genes=genes)
@@ -15,7 +15,7 @@ function StereoSSAM.getlocalmaxima(
     return RawCountObject(mat, coordinates.cell_name, genes.gene), coordinates
 end
 
-function StereoSSAM.readstereoseqbinned(::Type{RawCountObject}, file, binsize::Integer)
+function Sainsc.readstereoseqbinned(::Type{RawCountObject}, file, binsize::Integer)
     counts, genes, coordinates = readstereoseqbinned(file, binsize)
 
     rename!(coordinates, Dict(:id => "cell_name"))
