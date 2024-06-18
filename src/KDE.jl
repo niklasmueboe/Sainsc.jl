@@ -9,7 +9,7 @@ using Base.Threads: @threads
 using BlockArrays: Block, BlockArray, undef_blocks
 using CategoricalArrays: CategoricalMatrix, recode, recode!
 using DataFrames: AbstractDataFrame, nrow
-using ImageFiltering: Kernel, imfilter, Fill, Algorithm
+using ImageFiltering: Algorithm, Fill, Kernel, imfilter, reflect
 using LinearAlgebra: norm
 using OffsetArrays: OffsetArray
 using SparseArrays: AbstractSparseArray, SparseMatrixCSC, nnz, nonzeros, nzrange, rowvals
@@ -34,7 +34,7 @@ Calculate kernel density estimate.
 - `kernel`: usually a centered `OffsetArrays.OffsetArray`.
 """
 function kde(counts, kernel)
-    return imfilter(counts, kernel, Fill(zero(eltype(counts))), Algorithm.FIR())
+    return imfilter(counts, reflect(kernel), Fill(zero(eltype(counts))), Algorithm.FIR())
 end
 
 function kde(counts::SparseMatrixCSC, kernel)
@@ -159,7 +159,10 @@ function calculatecosinesim(counts, signatures, kernel, unpad; log=false)
     return celltypemap, cosine
 end
 
-function smallestuint(n)
+function smallestuint(n::Integer)
+    if n < 0
+        throw(DomainError(n, "Must be a positive integer"))
+    end
     uints = (UInt8, UInt16, UInt32, UInt64)
     return uints[findfirst(x -> typemax(x) >= n, uints)]
 end
