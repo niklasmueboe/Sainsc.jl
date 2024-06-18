@@ -1,4 +1,4 @@
-module StereoSSAM
+module Sainsc
 
 export GridCounts,
     readstereoseq,
@@ -24,4 +24,4 @@ using .IO
 using .KDE
 using .LocalMax
 
-end # module StereoSSAM
+end # module Sainsc

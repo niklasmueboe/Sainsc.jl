@@ -1,6 +1,6 @@
 # Reference API
 
-Documentation for `StereoSSAM.jl`'s public interface.
+Documentation for `Sainsc.jl`'s public interface.
 
 ## Index
 
@@ -12,10 +12,10 @@ Pages = ["api.md"]
 
 ```@autodocs
 Modules = [
-    StereoSSAM.GridCount,
-    StereoSSAM.IO,
-    StereoSSAM.Utils,
-    StereoSSAM.KDE,
-    StereoSSAM.LocalMax,
+    Sainsc.GridCount,
+    Sainsc.IO,
+    Sainsc.Utils,
+    Sainsc.KDE,
+    Sainsc.LocalMax,
 ]
 ```

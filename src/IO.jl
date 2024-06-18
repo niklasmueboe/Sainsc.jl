@@ -29,6 +29,7 @@ function readGEMfile(file)
     for n in countcol_name
         if n in names(df)
             rename!(df, n => :count)
+            break
         end
     end
 

@@ -4,9 +4,9 @@ using AutomaticSingleCellToolbox: WsObj
 using DataFrames: DataFrame, rename!
 using SparseArrays: nzrange
 
-using StereoSSAM
+using Sainsc
 
-function StereoSSAM.getlocalmaxima(::Type{WsObj}, counts, localmax, kernel; genes=nothing)
+function Sainsc.getlocalmaxima(::Type{WsObj}, counts, localmax, kernel; genes=nothing)
     X, genes, coordinates = getlocalmaxima(counts, localmax, kernel; genes=genes)
 
     coordinates[!, "cell_counts"] = vec(sum(X; dims=1))
@@ -17,7 +17,7 @@ function StereoSSAM.getlocalmaxima(::Type{WsObj}, counts, localmax, kernel; gene
     return WsObj(Dict("raw_dat" => X), coordinates, genes, String[], Dict())
 end
 
-function StereoSSAM.readstereoseqbinned(::Type{WsObj}, file, binsize::Integer)
+function Sainsc.readstereoseqbinned(::Type{WsObj}, file, binsize::Integer)
     X, genes, coordinates = readstereoseqbinned(file, binsize)
 
     coordinates[!, "cell_counts"] = vec(sum(X; dims=1))

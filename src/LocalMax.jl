@@ -17,8 +17,8 @@ using Unzip: unzip
 
 Find local maxima of the `img`.
 
-The input should be a [`kde`](@ref StereoSSAM.KDE.kde) of the 
-[`totalrna`](@ref StereoSSAM.GridCount.totalrna) or comparable.
+The input should be a [`kde`](@ref Sainsc.KDE.kde) of the 
+[`totalrna`](@ref Sainsc.GridCount.totalrna) or comparable.
 """
 function findlocalmaxima(img, mindist::Integer; threshold::Real=0)
     localmax = findlocalmax(img; window=(2mindist + 1, 2mindist + 1))
@@ -76,7 +76,7 @@ function getlocalmaxima(counts, localmax, kernel; genes=nothing)
 
     mat = getkdeforcoordinates([counts[g] for g in genes], localmax, kernel)
 
-    x, y = unzip(map((c -> c.I), localmax))
+    x, y = unzip(Tuple.(localmax))
 
     return (
         permutedims(mat),

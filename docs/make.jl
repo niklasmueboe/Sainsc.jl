@@ -1,20 +1,17 @@
 using Documenter
 using DocumenterInterLinks
-using StereoSSAM
+using Sainsc
 
 links = InterLinks(
     # "CategoricalArrays" => "https://categoricalarrays.juliadata.org/stable/",
     # "DataFrames" => "https://dataframes.juliadata.org/stable/",
     # "OffsetArrays" => "https://juliaarrays.github.io/OffsetArrays.jl/stable/",
     "Muon" => "https://scverse.org/Muon.jl/dev/",
-    "SparseArrays" => (
-        "https://docs.julialang.org/en/v1/stdlib/SparseArrays/",
-        "https://docs.julialang.org/en/v1/objects.inv",
-    ),
+    "SparseArrays" => "https://docs.julialang.org/en/v1/",
 )
 
 makedocs(;
-    sitename="StereoSSAM.jl",
+    sitename="Sainsc.jl",
     pages=[
         "Home" => "index.md",
         "Example analysis" => "examples/ExampleAnalysis.md",
@@ -25,4 +22,4 @@ makedocs(;
     format=Documenter.HTML(; size_threshold_ignore=["examples/ExampleAnalysis.md"]),
 )
 
-deploydocs(; repo="github.com/niklasmueboe/StereoSSAM.jl.git")
+deploydocs(; repo="github.com/niklasmueboe/Sainsc.jl.git")

@@ -2,9 +2,9 @@ module AnnDataExt
 
 using Muon: AnnData
 
-using StereoSSAM
+using Sainsc
 
-function StereoSSAM.getlocalmaxima(::Type{AnnData}, counts, localmax, kernel; genes=nothing)
+function Sainsc.getlocalmaxima(::Type{AnnData}, counts, localmax, kernel; genes=nothing)
     X, genes, obs = getlocalmaxima(counts, localmax, kernel; genes=genes)
 
     return AnnData(;
@@ -15,7 +15,7 @@ function StereoSSAM.getlocalmaxima(::Type{AnnData}, counts, localmax, kernel; ge
     )
 end
 
-function StereoSSAM.readstereoseqbinned(::Type{AnnData}, file, binsize::Integer)
+function Sainsc.readstereoseqbinned(::Type{AnnData}, file, binsize::Integer)
     X, genes, obs = readstereoseqbinned(file, binsize)
 
     return AnnData(;

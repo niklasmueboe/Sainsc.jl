@@ -1,12 +1,18 @@
-# StereoSSAM.jl
+# Sainsc.jl
 
-TODO general introduction
+`Sainsc.jl` - Segmentation-free analysis of in situ capture data[^1] - is,
+as the name states, a tool to analyse in situ capture-based spatial
+transcriptomics data. Actually, it can also be used to analyse imaging-based datasets.
+For a more thorough background please refer to the
+[original publication](https://TODO)
+or just follow along the provided examplary analysis.
 
-reference to python repo
+A more _batteries included_[^2] version of this package is available in Python/Rust.
+If you are interested have a look at [https://github.com/HiDiHlabs/sainsc](https://github.com/HiDiHlabs/sainsc).
 
 ## Citation
 
-If you use `StereoSSAM.jl` for your research please consider citing
+If you use `Sainsc.jl` for your research please consider citing
 TODO
 
 ## Installation
@@ -15,14 +21,14 @@ The package can be installed with the Julia package manager.
 From the Julia REPL, type `]` to enter the `Pkg` REPL mode and run:
 
 ```
-pkg> add StereoSSAM
+pkg> add Sainsc
 ```
 
 Or, alternatively, via the `Pkg` API:
 
 ```julia
 using Pkg
-Pkg.add("StereoSSAM")
+Pkg.add("Sainsc")
 ```
 
 ## Index
@@ -34,3 +40,6 @@ Pages = [
 ]
 Depth = 3
 ```
+
+[^1]: Some people claim it actually stands for _Stupid Acronyms in Science_
+[^2]: Pun intended

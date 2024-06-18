@@ -9,7 +9,7 @@ using Base.Threads: @threads
 using BlockArrays: Block, BlockArray, undef_blocks
 using CategoricalArrays: CategoricalMatrix, recode, recode!
 using DataFrames: AbstractDataFrame, nrow
-using ImageFiltering: Kernel, imfilter, Fill, Algorithm
+using ImageFiltering: Algorithm, Fill, Kernel, imfilter, reflect
 using LinearAlgebra: norm
 using OffsetArrays: OffsetArray
 using SparseArrays: AbstractSparseArray, SparseMatrixCSC, nnz, nonzeros, nzrange, rowvals
@@ -26,26 +26,26 @@ function gaussiankernel(σ::Real, r::Real)
 end
 
 """
-    kde(counts::AbstractArray{T}, kernel) where {T<:Real}
+    kde(counts, kernel)
 
 Calculate kernel density estimate.
 
 # Arguments
 - `kernel`: usually a centered `OffsetArrays.OffsetArray`.
 """
-function kde(counts::AbstractArray{T}, kernel) where {T<:Real}
-    return imfilter(counts, kernel, Fill(zero(T)), Algorithm.FIR())
+function kde(counts, kernel)
+    return imfilter(counts, reflect(kernel), Fill(zero(eltype(counts))), Algorithm.FIR())
 end
 
-function kde(counts::SparseMatrixCSC{T}, kernel::OffsetArray{S}) where {T<:Real,S<:Real}
-    kde_dest = Array{S}(undef, size(counts))
+function kde(counts::SparseMatrixCSC, kernel)
+    kde_dest = Array{eltype(kernel)}(undef, size(counts))
     kde!(kde_dest, counts, kernel)
     return kde_dest
 end
 
 function kde!(
-    dest::AbstractMatrix{T}, counts::SparseMatrixCSC{S}, kernel::AbstractMatrix{T}
-) where {T<:Real,S<:Real}
+    dest::AbstractMatrix{T}, counts::SparseMatrixCSC, kernel::AbstractMatrix{T}
+) where {T}
     m, n = size(counts)
 
     rows = rowvals(counts)
@@ -110,10 +110,10 @@ function chunk(counts, kernel, sx=500, sy=500)
     return chunks, rowslices, colslices
 end
 
-function calculatecosinesim(
-    counts, signatures::AbstractMatrix{T}, kernel::AbstractMatrix{T}, unpad; log=false
-) where {T<:Real}
+function calculatecosinesim(counts, signatures, kernel, unpad; log=false)
     n_celltypes = size(signatures, 1)
+
+    T = promote_type(eltype(signatures), eltype(kernel))
 
     kde_norm = zeros(T, length.(unpad))
     kde_gene = Array{T}(undef, size(first(counts)))
@@ -153,13 +153,16 @@ function calculatecosinesim(
     @. cosine /= sqrt(kde_norm)
     @. cosine[iszero(kde_norm)] = 0
 
-    celltypemap = map((x -> x.I[3]), celltype)
+    celltypemap = map((x -> x[3]), celltype)
     @. celltypemap[iszero(cosine)] = 0
 
     return celltypemap, cosine
 end
 
-function smallestuint(n)
+function smallestuint(n::Integer)
+    if n < 0
+        throw(DomainError(n, "Must be a positive integer"))
+    end
     uints = (UInt8, UInt16, UInt32, UInt64)
     return uints[findfirst(x -> typemax(x) >= n, uints)]
 end
