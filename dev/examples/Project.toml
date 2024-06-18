@@ -12,7 +12,7 @@ Muon                 = "446846d7-b4ce-489d-bf74-72da18fe3629"
 OpenCV               = "f878e3a2-a245-4720-8660-60795d644f2a"
 Plots                = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 Printf               = "de0858da-6303-5e67-8744-51eddeeeb8d7"
-StereoSSAM           = "4c4340ea-7f9e-46b4-8512-61f1f6c41a11"
+Sainsc               = "4c4340ea-7f9e-46b4-8512-61f1f6c41a11"
 
 [compat]
 Literate = "2.15.1"
