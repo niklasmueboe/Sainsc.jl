@@ -29,9 +29,9 @@ SingleCellProjectionsExt = "SingleCellProjections"
 
 [compat]
 AutomaticSingleCellToolbox = "0.9"
-BlockArrays = "0.16,1"
+BlockArrays = "0.16, 1"
 CSV = "0.10"
-CategoricalArrays = "0.9,0.10"
+CategoricalArrays = "0.9, 0.10"
 CellScopes = "1"
 DataFrames = "1"
 ImageFiltering = "0.7"
