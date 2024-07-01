@@ -65,8 +65,8 @@ simshow(imresize(total_counts; ratio=1 / 45))
 Next, we define a [`gaussiankernel`](@ref) to use for smoothing and thus integrating 
 the gene expression locally across pixels. The relevant parameters are the abndwidth of 
 the kernel and the radius i.e. how large the kernel will be measured in bandwidths.
-For example, setting the bandwidth ``\sigma=8`` and the radius ``r=2`` will result in a 
-kernel of size ``2r*\sigma+1=33``.
+For example, setting the bandwidth ``bw=8`` and the radius ``r=2`` will result in a 
+kernel of size ``2r*bw+1=33``.
 
 We can also convert the kernel to `Float32` to reduce memory usage later on.
 =#

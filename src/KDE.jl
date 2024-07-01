@@ -16,13 +16,13 @@ using SparseArrays: AbstractSparseArray, SparseMatrixCSC, nnz, nonzeros, nzrange
 
 # KDE
 """
-    gaussiankernel(σ::Real, r::Real)
+    gaussiankernel(bw::Real, r::Real)
 
-Generate a gaussian kernel with bandwidth `σ` and radius `r * σ`
+Generate a gaussian kernel with bandwidth `bw` and radius `r * bw`
 """
-function gaussiankernel(σ::Real, r::Real)
-    l = ceil(Int, 2r * σ + 1)
-    return Kernel.gaussian((σ, σ), (l, l))
+function gaussiankernel(bw::Real, r::Real)
+    l = ceil(Int, 2r * bw + 1)
+    return Kernel.gaussian((bw, bw), (l, l))
 end
 
 """
