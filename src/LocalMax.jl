@@ -54,7 +54,7 @@ function getkdeforcoordinates(counts, coordinates, kernel)
 end
 
 """
-    getlocalmaxima(counts, localmax, kernel; genes=nothing)
+    getlocalmaxima(counts, localmax, kernel; genes=nothing) -> (expression, genes, coordinates)
 
 Load KDE with `kernel` for coordinates at `localmax`.
 

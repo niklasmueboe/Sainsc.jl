@@ -168,7 +168,7 @@ function smallestuint(n::Integer)
 end
 
 """
-    assigncelltype(counts, signatures, kernel; celltypes=nothing, log=false)
+    assigncelltype(counts, signatures, kernel; celltypes=nothing, log=false) -> (celltypes, cosine)
 
 Assign a celltype to each pixel.
 
