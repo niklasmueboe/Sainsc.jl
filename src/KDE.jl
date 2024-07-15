@@ -176,15 +176,16 @@ function calculatecosinesim(
         map(x -> findcelltypescore(x, similaritycorrection), eachslice(cosine; dims=(1, 2)))
     )
 
-    # set empty pixels to zero (otherwise there might be random results)
     empty = iszero.(kde_norm)
-    cosine[empty] .= 0
-    score[empty] .= 0
-    celltype[empty] .= 0
 
     @. kde_norm = sqrt(kde_norm)
     cosine ./= kde_norm
     score ./= kde_norm
+
+    # set empty pixels to zero (to avoid nan and "random" celltype)
+    cosine[empty] .= 0
+    score[empty] .= 0
+    celltype[empty] .= 0
 
     return celltype, cosine, score
 end
