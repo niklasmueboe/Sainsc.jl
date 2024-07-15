@@ -10,19 +10,20 @@ using BlockArrays: Block, BlockArray, undef_blocks
 using CategoricalArrays: CategoricalMatrix, recode, recode!
 using DataFrames: AbstractDataFrame, nrow
 using ImageFiltering: Algorithm, Fill, Kernel, imfilter, reflect
-using LinearAlgebra: norm
+using LinearAlgebra: dot, norm
 using OffsetArrays: OffsetArray
 using SparseArrays: AbstractSparseArray, SparseMatrixCSC, nnz, nonzeros, nzrange, rowvals
+using Unzip: unzip
 
 # KDE
 """
-    gaussiankernel(σ::Real, r::Real)
+    gaussiankernel(bw::Real, r::Real)
 
-Generate a gaussian kernel with bandwidth `σ` and radius `r * σ`
+Generate a gaussian kernel with bandwidth `bw` and radius `r * bw`
 """
-function gaussiankernel(σ::Real, r::Real)
-    l = ceil(Int, 2r * σ + 1)
-    return Kernel.gaussian((σ, σ), (l, l))
+function gaussiankernel(bw::Real, r::Real)
+    l = ceil(Int, 2r * bw + 1)
+    return Kernel.gaussian((bw, bw), (l, l))
 end
 
 """
@@ -110,7 +111,32 @@ function chunk(counts, kernel, sx=500, sy=500)
     return chunks, rowslices, colslices
 end
 
-function calculatecosinesim(counts, signatures, kernel, unpad; log=false)
+function findcelltypescore(cosine, upperbound)
+    max = 0
+    max2 = 0
+    argmax = 1
+    argmax2 = 1
+    for (i, val) in pairs(cosine)
+        if val > max2
+            if val > max
+                max2 = max
+                max = val
+                argmax2 = argmax
+                argmax = i
+            else
+                max2 = val
+                argmax2 = i
+            end
+        end
+    end
+    score = (max - max2) / upperbound[argmax, argmax2]
+    return (max, score, argmax)
+end
+
+function calculatecosinesim(
+    counts, signatures, similaritycorrection, kernel, unpad; log=false
+)
+    # signatures must be normed row-wise (celltype-wise)
     n_celltypes = size(signatures, 1)
 
     T = promote_type(eltype(signatures), eltype(kernel))
@@ -143,20 +169,25 @@ function calculatecosinesim(counts, signatures, kernel, unpad; log=false)
 
     # fastpath if whole chunk was "empty"
     if init
-        return zeros(UInt8, length.(unpad)), kde_norm
+        return zeros(UInt8, length.(unpad)), kde_norm, zeros(T, length.(unpad))
     end
 
-    celltype_norm = map(norm, eachslice(signatures; dims=1))
-    cosine ./= reshape(celltype_norm, 1, 1, n_celltypes)
-    cosine, celltype = map((x -> dropdims(x; dims=3)), findmax(cosine; dims=3))
+    cosine, score, celltype = unzip(
+        map(x -> findcelltypescore(x, similaritycorrection), eachslice(cosine; dims=(1, 2)))
+    )
 
-    @. cosine /= sqrt(kde_norm)
-    @. cosine[iszero(kde_norm)] = 0
+    empty = iszero.(kde_norm)
 
-    celltypemap = map((x -> x[3]), celltype)
-    @. celltypemap[iszero(cosine)] = 0
+    @. kde_norm = sqrt(kde_norm)
+    cosine ./= kde_norm
+    score ./= kde_norm
 
-    return celltypemap, cosine
+    # set empty pixels to zero (to avoid nan and "random" celltype)
+    cosine[empty] .= 0
+    score[empty] .= 0
+    celltype[empty] .= 0
+
+    return celltype, cosine, score
 end
 
 function smallestuint(n::Integer)
@@ -168,7 +199,7 @@ function smallestuint(n::Integer)
 end
 
 """
-    assigncelltype(counts, signatures, kernel; celltypes=nothing, log=false)
+    assigncelltype(counts, signatures, kernel; celltypes=nothing, log=false) -> (celltypes, cosine)
 
 Assign a celltype to each pixel.
 
@@ -199,28 +230,42 @@ function assigncelltype(counts, signatures, kernel; celltypes=nothing, log=false
     T = eltype(kernel)
     U = smallestuint(nrow(signatures))
 
-    signatures = signatures[!, exist]
+    signatures = Matrix{T}(signatures[!, exist])
+    signatures ./= map(norm, eachslice(signatures; dims=1))
 
-    signatures = Matrix{T}(signatures)
+    nsignatures = size(signatures, 1)
+    sigcorrection = zeros(T, nsignatures, nsignatures)
+    for (i, j) in Tuple.(CartesianIndices(sigcorrection))
+        if i != j
+            s = signatures[i, :] .- signatures[j, :]
+            @. s[s < 0] = 0
+            sigcorrection[i, j] = sqrt(dot(s, s))
+        end
+    end
 
     chunked_counts, rowslices, colslices = chunk([counts[g] for g in genes], kernel)
     rows, cols = length.(rowslices), length.(colslices)
 
     cosine = BlockArray(undef_blocks, Matrix{T}, rows, cols)
+    score = BlockArray(undef_blocks, Matrix{T}, rows, cols)
     celltypemap = BlockArray(undef_blocks, Matrix{U}, rows, cols)
 
     @threads for (i, r) in collect(enumerate(rowslices))
         @threads for (j, c) in collect(enumerate(colslices))
             idx = Block(i, j)
-            celltypemap_chunk, cosine_chunk = calculatecosinesim(
-                pop!(chunked_counts, idx), signatures, kernel, (r, c); log=log
+            celltypemap[idx], cosine[idx], score[idx] = calculatecosinesim(
+                pop!(chunked_counts, idx),
+                signatures,
+                sigcorrection,
+                kernel,
+                (r, c);
+                log=log,
             )
-            @views celltypemap[idx] = celltypemap_chunk
-            @views cosine[idx] = cosine_chunk
         end
     end
 
-    cosine = collect(cosine)
+    cosine = Matrix(cosine)
+    score = Matrix(score)
     celltypemap = CategoricalMatrix{Union{Missing,U},U}(collect(celltypemap))
     recode!(celltypemap, 0 => missing)
 
@@ -228,7 +273,7 @@ function assigncelltype(counts, signatures, kernel; celltypes=nothing, log=false
         celltypemap = recode(celltypemap, Dict(enumerate(celltypes))...)
     end
 
-    return celltypemap, cosine
+    return celltypemap, cosine, score
 end
 
 end # module KDE

@@ -65,8 +65,8 @@ simshow(imresize(total_counts; ratio=1 / 45))
 Next, we define a [`gaussiankernel`](@ref) to use for smoothing and thus integrating 
 the gene expression locally across pixels. The relevant parameters are the abndwidth of 
 the kernel and the radius i.e. how large the kernel will be measured in bandwidths.
-For example, setting the bandwidth ``\sigma=8`` and the radius ``r=2`` will result in a 
-kernel of size ``2r*\sigma+1=33``.
+For example, setting the bandwidth ``bw=8`` and the radius ``r=2`` will result in a 
+kernel of size ``2r*bw+1=33``.
 
 We can also convert the kernel to `Float32` to reduce memory usage later on.
 =#
@@ -110,13 +110,16 @@ adata = getlocalmaxima(AnnData, counts, lm, kernel; genes=names(signatures))
 
 Once we have identified gene signatures from literature, previous experiments, 
 or by analysing local maxima we can assign a celltype to each pixel. This is usually the 
-most time-intensive processing step. [`assigncelltype`](@ref) returns 2 matrices;
+most time-intensive processing step. [`assigncelltype`](@ref) returns 3 matrices;
 a map of assigned celltypes of each pixel as 
-`CategoricalArrays.CategoricalMatrix` and the cosine similarity of the 
-assigned cell type for each pixel as matrix.
+`CategoricalArrays.CategoricalMatrix`, the cosine similarity of the 
+assigned cell type for each pixel, and the assignment score as a confidence of the 
+cell type assignment.
 =#
 
-celltype_map, cosine_sim = assigncelltype(counts, signatures, kernel; celltypes=celltypes);
+celltype_map, cosine_sim, assignment_conf = assigncelltype(
+    counts, signatures, kernel; celltypes=celltypes
+);
 
 #=
 In the final step we can visualize the cell-type map.
@@ -150,6 +153,12 @@ histogram(nonzeros(sparse(total_rna)); title="KDE of totalRNA", bins=200)
 celltype_img[total_rna .< 1.5] .= background_color;
 
 simshow(imresize(celltype_img; ratio=1 / 45))
+
+#=
+The assignment score can be useful to evaluate the confidence of assignment.
+=#
+
+simshow(imresize(Gray.(assignment_conf); ratio=1 / 45))
 
 #=
 ## Utils

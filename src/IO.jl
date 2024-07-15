@@ -48,7 +48,7 @@ function readstereoseq(file)
 end
 
 """
-    readstereoseqbinned(file, binsize::Integer)
+    readstereoseqbinned(file, binsize::Integer) -> (counts, genes, bins)
 
 Read StereoSeq `file` and aggregate into bins.
 """
