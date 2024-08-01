@@ -116,32 +116,6 @@ function getchunk(counts, kernel, i, j; chunksize=(500, 500))
     return chunk, (unpadrow, unpadcol)
 end
 
-function getchunks(counts, kernel; chunksize=(500, 500))
-    (m, n), (padrow, padcol) = padinfo(counts, kernel)
-    srow, scol = chunksize
-
-    chunks = Dict{Block{2,Int},Any}()
-
-    colslices = UnitRange{Int}[]
-    rowslices = UnitRange{Int}[]
-
-    for j in 1:cld(n, scol)
-        slicecol, unpadcol = chunk_slices(j, scol, n, padcol)
-        col_chunk = map(x -> x[:, slicecol], counts)
-        push!(colslices, unpadcol)
-
-        for i in 1:cld(m, srow)
-            slicerow, unpadrow = chunk_slices(i, srow, m, padrow)
-            chunks[Block(i, j)] = map(x -> x[slicerow, :], col_chunk)
-            if j == 1
-                push!(rowslices, unpadrow)
-            end
-        end
-    end
-
-    return chunks, rowslices, colslices
-end
-
 function findcelltypescore(cosine, upperbound)
     max = 0
     max2 = 0
@@ -244,16 +218,9 @@ The `eltype(kernel)` will be used for calculations and `signatures` will be cast
 - `celltypes::Vector{AbstractString}=nothing`: optional celltype names.
 - `log::Bool`: whether to log-transform the KDE. Useful if `signatures` are calculated 
     from log-transformed gene expression.
-- `lowmemory::Bool`: if false will use more memory but may have shorter runtime.
 """
 function assigncelltype(
-    counts,
-    signatures,
-    kernel;
-    celltypes=nothing,
-    log=false,
-    lowmemory=true,
-    chunksize=(500, 500),
+    counts, signatures, kernel; celltypes=nothing, log=false, chunksize=(500, 500)
 )
     if !isnothing(celltypes) && length(celltypes) != nrow(signatures)
         error("Length of 'celltypes' must match number of rows in 'signatures'")
@@ -292,30 +259,15 @@ function assigncelltype(
     score = BlockArray(undef_blocks, Matrix{T}, chunklengths...)
     celltypemap = BlockArray(undef_blocks, Matrix{U}, chunklengths...)
 
-    if lowmemory
-        srow, scol = chunksize
-        @threads for i in 1:cld(m, srow)
-            @threads for j in 1:cld(n, scol)
-                idx = Block(i, j)
-                chunk, unpad = getchunk(counts, kernel, i, j; chunksize=chunksize)
-                celltypemap[idx], cosine[idx], score[idx] = calculatecosinesim(
-                    chunk, signatures, sigcorrection, kernel, unpad; log=log
-                )
-            end
-        end
-    else
-        chunked_counts, rowslices, colslices = getchunks(
-            counts, kernel; chunksize=chunksize
-        )
+    srow, scol = chunksize
 
-        @threads for (i, r) in collect(enumerate(rowslices))
-            @threads for (j, c) in collect(enumerate(colslices))
-                idx = Block(i, j)
-                chunk = pop!(chunked_counts, idx)
-                celltypemap[idx], cosine[idx], score[idx] = calculatecosinesim(
-                    chunk, signatures, sigcorrection, kernel, (r, c); log=log
-                )
-            end
+    @threads for i in 1:cld(m, srow)
+        @threads for j in 1:cld(n, scol)
+            idx = Block(i, j)
+            chunk, unpad = getchunk(counts, kernel, i, j; chunksize=chunksize)
+            celltypemap[idx], cosine[idx], score[idx] = calculatecosinesim(
+                chunk, signatures, sigcorrection, kernel, unpad; log=log
+            )
         end
     end
 
