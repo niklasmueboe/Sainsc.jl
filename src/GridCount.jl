@@ -3,7 +3,7 @@ module GridCount
 export GridCounts, crop!, mask!, gridsize, totalrna
 
 using Base.Threads: @threads
-using DataFrames: DataFrame, groupby, transform!
+using DataFrames: DataFrame, groupby, transform, transform!
 using SparseArrays: SparseMatrixCSC, dropzeros!, findnz, nonzeros, sparse
 
 """
@@ -48,12 +48,12 @@ Construct from a DataFrame with columns 'x' (`Integer`), 'y' (`Integer`), 'count
 'geneID' (`Pool`).
 """
 function GridCounts(df::DataFrame)
-    transform!(df, [:x, :y] .=> (x -> x .- (minimum(x) - one(eltype(x)))) .=> [:x, :y])
+    df = transform(df, [:x, :y] .=> (x -> x .- (minimum(x) - one(eltype(x)))) .=> [:x, :y])
 
     rows = maximum(df.x)
     cols = maximum(df.y)
 
-    n = length(df.geneID.pool)
+    n = length(unique(df.geneID))
     genes = Vector{eltype(df.geneID)}(undef, n)
     counts = Vector{SparseMatrixCSC{eltype(df.count)}}(undef, n)
     @threads for (i, (key, subdf)) in collect(enumerate(pairs(groupby(df, :geneID))))
@@ -65,14 +65,20 @@ function GridCounts(df::DataFrame)
 end
 
 """
-    GridCounts(df::DataFrame, binsize::Integer)
+    GridCounts(df::DataFrame, binsize::Real)
 
 Construct from a DataFrame with columns 'x' (`Real`), 'y' (`Real`), 'count', and 
 'geneID' (`Pool`) binning the data by `binsize`.
 """
-function GridCounts(df::DataFrame, binsize::Integer)
-    transform!(df, [:x, :y] .=> (x -> x .- minimum(x)) .=> [:x, :y])
+function GridCounts(df::DataFrame, binsize::Real)
+    df = transform(df, [:x, :y] .=> (x -> x .- minimum(x)) .=> [:x, :y])
     transform!(df, @. [:x, :y] => (x -> div(x, binsize) + 1) => [:x, :y])
+
+    for column in [:x, :y]
+        if !(eltype(df[!, column]) isa Integer)
+            df[!, column] = convert.(UInt32, df[!, column])
+        end
+    end
 
     return GridCounts(df)
 end
